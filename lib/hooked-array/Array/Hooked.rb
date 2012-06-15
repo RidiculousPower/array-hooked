@@ -101,13 +101,40 @@ class ::Array::Hooked < ::Array
 
     object = nil
     
-    if pre_get_hook( index )
+    should_get = true
     
+    unless @without_hooks
+      should_get = pre_get_hook( index )
+    end
+    
+    if should_get
+      
       object = super( index )
     
-      object = post_get_hook( index, object )
-
+      unless @without_hooks
+        object = post_get_hook( index, object )
+      end
+      
     end
+    
+    return object
+    
+  end
+
+  #######################
+  #  get_without_hooks  #
+  #######################
+
+  # Alias to :[] that bypasses hooks.
+  # @param [Fixnum] index Index at which set is taking place.
+  # @return [Object] Element returned.
+  def get_without_hooks( index )
+    
+    @without_hooks = true
+
+    self[ index ] = object
+    
+    @without_hooks = false
     
     return object
     

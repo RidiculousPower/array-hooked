@@ -4,7 +4,7 @@ Gem::Specification.new do |spec|
 
   spec.name                      =  'hooked-array'
   spec.rubyforge_project         =  'hooked-array'
-  spec.version                   =  '1.0.1'
+  spec.version                   =  '1.0.2'
 
   spec.summary                   =  "Provides ::Array::Hooked and ::HookedArray."
   spec.description               =  "A subclass of Array that offers event hooks for pre-insert/pre-set/pre-delete, insert/set/delete. ::HookedArray offers implicit reference to a configuration instance."
