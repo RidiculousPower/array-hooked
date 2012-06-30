@@ -1,5 +1,5 @@
 
-require_relative '../lib/hooked-array.rb'
+require_relative '../lib/array-hooked.rb'
 
 describe ::HookedArray do
   

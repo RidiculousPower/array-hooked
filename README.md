@@ -1,6 +1,6 @@
 # Hooked Array #
 
-http://rubygems.org/gems/hooked-array
+http://rubygems.org/gems/array-hooked
 
 # Description #
 
@@ -12,7 +12,7 @@ A subclass of Array that offers event hooks for pre-insert/pre-set/pre-delete, i
 
 # Install #
 
-* sudo gem install hooked-array
+* sudo gem install array-hooked
 
 # Usage #
 

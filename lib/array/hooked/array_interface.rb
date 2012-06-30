@@ -1,8 +1,8 @@
 
-class ::Array::Hooked < ::Array
-  
+module ::Array::Hooked::ArrayInterface
+
   instances_identify_as!( ::Array::Hooked )
-  
+
   ######################################  Subclass Hooks  ##########################################
   
   ##################
@@ -140,16 +140,6 @@ class ::Array::Hooked < ::Array
     
   end
 
-  ###############################
-  #  perform_set_between_hooks  #
-  ###############################
-  
-  # Alias to original :[]= method. Used to perform actual set between hooks.
-  # @param [Fixnum] index Index at which set is taking place.
-  # @param [Object] object Element being set.
-  # @return [Object] Element returned.
-  alias_method :perform_set_between_hooks, :[]=
-
   #########
   #  []=  #
   #########
@@ -194,16 +184,6 @@ class ::Array::Hooked < ::Array
     
   end
 
-  ##################################
-  #  perform_insert_between_hooks  #
-  ##################################
-
-  # Alias to original :insert method. Used to perform actual insert between hooks.
-  # @param [Fixnum] index Index at which insert is taking place.
-  # @param [Array<Object>] objects Elements being inserted.
-  # @return [Object] Element returned.
-  alias_method :perform_insert_between_hooks, :insert
-
   ############
   #  insert  #
   ############
@@ -216,7 +196,8 @@ class ::Array::Hooked < ::Array
     else
       objects_to_insert = [ ]
       objects.each_with_index do |this_object, this_index|
-        this_object = pre_set_hook( index + this_index, this_object, true )
+        this_insert_index = index + this_index
+        this_object = pre_set_hook( this_insert_index, this_object, true )
         objects_to_insert.push( this_object )
       end
     end
@@ -275,6 +256,7 @@ class ::Array::Hooked < ::Array
     return insert( count, *objects )
 
   end
+  
   alias_method :<<, :push
 
   ########################
@@ -309,6 +291,7 @@ class ::Array::Hooked < ::Array
     return self
 
   end
+  
   alias_method :+, :concat
 
   ##########################
@@ -421,15 +404,6 @@ class ::Array::Hooked < ::Array
     return self
 
   end
-
-  ##################################
-  #  perform_delete_between_hooks  #
-  ##################################
-
-  # Alias to original :delete method. Used to perform actual delete between hooks.
-  # @param [Fixnum] index Index at which delete is taking place.
-  # @return [Object] Element returned.
-  alias_method :perform_delete_between_hooks, :delete_at
 
   ###############
   #  delete_at  #
@@ -924,6 +898,7 @@ class ::Array::Hooked < ::Array
     return self
 
   end
+  
   alias_method :map!, :collect!
 
   ############################
@@ -945,6 +920,7 @@ class ::Array::Hooked < ::Array
     return self
     
   end
+  
   alias_method :map_without_hooks!, :collect_without_hooks!
   
   ###########
@@ -1253,5 +1229,5 @@ class ::Array::Hooked < ::Array
     return self
     
   end
-
+  
 end

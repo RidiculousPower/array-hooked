@@ -1,24 +1,20 @@
 
-require 'identifies_as'
-
-class ::Array::Hooked < ::Array
-end
-class ::HookedArray < ::Array::Hooked
-end
-
-basepath = 'hooked-array/Array/Hooked'
+basepath = 'hooked'
 
 files = [
+  
+  'array_interface'
+  
+]
+
+second_basepath = '../hooked_array'
+
+second_files = [
+    
+  'array_interface'
     
 ]
 
-second_basepath = 'hooked-array/HookedArray'
-
-second_files = [
-  
-  'Interface'
-  
-]
 
 files.each do |this_file|
   require_relative( File.join( basepath, this_file ) + '.rb' )

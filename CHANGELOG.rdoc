@@ -6,3 +6,7 @@ Initial release - split from compositing-array.
 == 6/15/2012
 
 Added missing :get_without_hooks and corresponding hooks.
+
+== 6/30/2012
+
+Renamed from hooked-array to array-hooked. File schema updated to reflect gem name.
