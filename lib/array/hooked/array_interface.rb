@@ -2,7 +2,47 @@
 module ::Array::Hooked::ArrayInterface
 
   instances_identify_as!( ::Array::Hooked )
+  
+  extend ::Module::Cluster
+  extend ::Module::Cluster::ModuleSupport
+  
+  cluster( :hooked_array_interface ).before_include.cascade_to( :class ) do |hooked_instance|
 
+    hooked_instance.class_eval do
+
+      ###############################
+      #  perform_set_between_hooks  #
+      ###############################
+
+      # Alias to original :[]= method. Used to perform actual set between hooks.
+      # @param [Fixnum] index Index at which set is taking place.
+      # @param [Object] object Element being set.
+      # @return [Object] Element returned.
+      alias_method :perform_set_between_hooks, :[]=
+
+      ##################################
+      #  perform_insert_between_hooks  #
+      ##################################
+
+      # Alias to original :insert method. Used to perform actual insert between hooks.
+      # @param [Fixnum] index Index at which insert is taking place.
+      # @param [Array<Object>] objects Elements being inserted.
+      # @return [Object] Element returned.
+      alias_method :perform_insert_between_hooks, :insert
+
+      ##################################
+      #  perform_delete_between_hooks  #
+      ##################################
+
+      # Alias to original :delete method. Used to perform actual delete between hooks.
+      # @param [Fixnum] index Index at which delete is taking place.
+      # @return [Object] Element returned.
+      alias_method :perform_delete_between_hooks, :delete_at
+
+    end
+    
+  end
+#puts 'wtf: ' + ::Module::Cluster.instance_controller( self ).before_include_controller.stack.to_s
   ################
   #  initialize  #
   ################
@@ -633,7 +673,7 @@ module ::Array::Hooked::ArrayInterface
     indexes = [ ]
 
     self.each_with_index do |this_object, index|
-      if this_object.is_a?( Array )
+      if this_object.is_a?( ::Array )
         indexes.push( index )
       end
     end
@@ -836,8 +876,7 @@ module ::Array::Hooked::ArrayInterface
 
     deleted_objects = 0
 
-    iteration_dup = dup
-    iteration_dup.each_with_index do |this_object, index|
+    dup.each_with_index do |this_object, index|
       unless yield( this_object )
         delete_at( index - deleted_objects )
         deleted_objects += 1
@@ -1032,10 +1071,10 @@ module ::Array::Hooked::ArrayInterface
 
     uniq_array = uniq
 
-    unless uniq_array == self
+    unless self == uniq_array
 
       clear
-
+      
       replace( uniq_array )
 
     end
