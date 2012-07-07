@@ -4,45 +4,62 @@ module ::Array::Hooked::ArrayInterface
   instances_identify_as!( ::Array::Hooked )
   
   extend ::Module::Cluster
-  extend ::Module::Cluster::ModuleSupport
   
   cluster( :hooked_array_interface ).before_include.cascade_to( :class ) do |hooked_instance|
-
+    
     hooked_instance.class_eval do
-
-      ###############################
-      #  perform_set_between_hooks  #
-      ###############################
+      
+      #####################
+      #  undecorated_set  #
+      #####################
 
       # Alias to original :[]= method. Used to perform actual set between hooks.
       # @param [Fixnum] index Index at which set is taking place.
       # @param [Object] object Element being set.
       # @return [Object] Element returned.
-      alias_method :perform_set_between_hooks, :[]=
+      unless method_defined?( :undecorated_set )
+        alias_method :undecorated_set, :[]=
+      end
 
-      ##################################
-      #  perform_insert_between_hooks  #
-      ##################################
+      #####################
+      #  undecorated_get  #
+      #####################
+
+      # Alias to original :[]= method. Used to perform actual set between hooks.
+      # @param [Fixnum] index Index at which set is taking place.
+      # @param [Object] object Element being set.
+      # @return [Object] Element returned.
+      unless method_defined?( :undecorated_get )
+        alias_method :undecorated_get, :[]
+      end
+      
+      ########################
+      #  undecorated_insert  #
+      ########################
 
       # Alias to original :insert method. Used to perform actual insert between hooks.
       # @param [Fixnum] index Index at which insert is taking place.
       # @param [Array<Object>] objects Elements being inserted.
       # @return [Object] Element returned.
-      alias_method :perform_insert_between_hooks, :insert
-
-      ##################################
-      #  perform_delete_between_hooks  #
-      ##################################
+      unless method_defined?( :undecorated_insert )
+        alias_method :undecorated_insert, :insert
+      end
+      
+      ###########################
+      #  undecorated_delete_at  #
+      ###########################
 
       # Alias to original :delete method. Used to perform actual delete between hooks.
       # @param [Fixnum] index Index at which delete is taking place.
       # @return [Object] Element returned.
-      alias_method :perform_delete_between_hooks, :delete_at
-
+      unless method_defined?( :undecorated_delete_at )
+        alias_method :undecorated_delete_at, :delete_at
+      end
+      
     end
     
   end
-#puts 'wtf: ' + ::Module::Cluster.instance_controller( self ).before_include_controller.stack.to_s
+  
   ################
   #  initialize  #
   ################
@@ -59,14 +76,14 @@ module ::Array::Hooked::ArrayInterface
     super( *args )
         
   end
-
+  
   ############################
   #  configuration_instance  #
   ############################
 
   attr_accessor :configuration_instance
   
-  ######################################  Subclass Hooks  ##########################################
+  ################################################  Subclass Hooks  ####################################################
   
   ##################
   #  pre_set_hook  #
@@ -184,28 +201,10 @@ module ::Array::Hooked::ArrayInterface
     
   end
 
-  #######################
-  #  get_without_hooks  #
-  #######################
-
-  # Alias to :[] that bypasses hooks.
-  # @param [Fixnum] index Index at which set is taking place.
-  # @return [Object] Element returned.
-  def get_without_hooks( index )
-    
-    @without_hooks = true
-
-    self[ index ] = object
-    
-    @without_hooks = false
-    
-    return object
-    
-  end
-
-  #########
-  #  []=  #
-  #########
+  ################
+  #  []=         #
+  #  hooked_set  #
+  ################
 
   def []=( index, object )
 
@@ -227,55 +226,22 @@ module ::Array::Hooked::ArrayInterface
 
   end
   
-  #######################
-  #  set_without_hooks  #
-  #######################
-
-  # Alias to :[]= that bypasses hooks.
-  # @param [Fixnum] index Index at which set is taking place.
-  # @param [Object] object Element being set.
-  # @return [Object] Element returned.
-  def set_without_hooks( index, object )
-    
-    @without_hooks = true
-
-    self[ index ] = object
-    
-    @without_hooks = false
-    
-    return object
-    
-  end
-
-  ############
-  #  insert  #
-  ############
+  alias_method :hooked_set, :[]=
+  
+  ###################
+  #  insert         #
+  #  hooked_insert  #
+  ###################
 
   def insert( index, *objects )
-    
-    objects_to_insert = nil
-    if @without_hooks
-      objects_to_insert = objects
-    else
-      objects_to_insert = [ ]
+
+    index = filter_insert_objects( index, objects )
+
+    unless @without_hooks
       objects.each_with_index do |this_object, this_index|
-        this_insert_index = index + this_index
-        this_object = pre_set_hook( this_insert_index, this_object, true )
-        objects_to_insert.push( this_object )
+        this_object = pre_set_hook( index + this_index, this_object, true )
+        objects[ this_index ] = this_object
       end
-    end
-    objects = objects_to_insert
-    
-    # if we have less elements in self than the index we are inserting at
-    # we need to make sure the nils inserted cascade
-    if index > count
-      nils_created = index - count
-      index -= nils_created
-      nils = [ ]
-      nils_created.times do |this_time|
-        nils.push( nil )
-      end
-      objects = nils.concat( objects )
     end
 
     perform_insert_between_hooks( index, *objects )
@@ -289,26 +255,8 @@ module ::Array::Hooked::ArrayInterface
     return objects
 
   end
-
-  ##########################
-  #  insert_without_hooks  #
-  ##########################
-
-  # Alias to :insert that bypasses hooks.
-  # @param [Fixnum] index Index at which set is taking place.
-  # @param [Array<Object>] objects Elements being inserted.
-  # @return [Object] Element returned.
-  def insert_without_hooks( index, *objects )
-
-    @without_hooks = true
-
-    super( index, *objects )
-    
-    @without_hooks = false
-
-    return objects
-
-  end
+  
+  alias_method :hooked_insert, :insert
   
   ##########
   #  push  #
@@ -321,25 +269,6 @@ module ::Array::Hooked::ArrayInterface
   end
   
   alias_method :<<, :push
-
-  ########################
-  #  push_without_hooks  #
-  ########################
-
-  # Alias to :push that bypasses hooks.
-  # @param [Array<Object>] objects Elements being pushed.
-  # @return [Object] Element returned.
-  def push_without_hooks( *objects )
-
-    @without_hooks = true
-
-    push( *objects )
-    
-    @without_hooks = false
-
-    return objects
-
-  end
 
   ############
   #  concat  #
@@ -357,28 +286,10 @@ module ::Array::Hooked::ArrayInterface
   
   alias_method :+, :concat
 
-  ##########################
-  #  concat_without_hooks  #
-  ##########################
-
-  # Alias to :concat that bypasses hooks.
-  # @param [Array<Object>] objects Elements being concatenated.
-  # @return [Object] Element returned.
-  def concat_without_hooks( *arrays )
-
-    @without_hooks = true
-
-    concat( *arrays )
-    
-    @without_hooks = false
-
-    return arrays
-
-  end
-
-  ############
-  #  delete  #
-  ############
+  ###################
+  #  delete         #
+  #  hooked_delete  #
+  ###################
 
   def delete( object )
 
@@ -391,30 +302,22 @@ module ::Array::Hooked::ArrayInterface
     return return_value
 
   end
-
-  ##########################
-  #  delete_without_hooks  #
-  ##########################
-
-  # Alias to :delete that bypasses hooks.
-  # @param [Object] object Element being deleted.
-  # @return [Object] Element returned.
-  def delete_without_hooks( object )
-
-    @without_hooks = true
-
-    return_value = delete( object )
-    
-    @without_hooks = false
-
-    return return_value
-
-  end
+  
+  alias_method :hooked_delete, :delete
 
   ####################
   #  delete_objects  #
   ####################
 
+  ###
+  # Delete more than one object at a time.
+  #
+  # @overload delete_objects( object, ... )
+  #
+  #   @param object Object to delete.
+  #
+  # @return [Array<Object>] Deleted objects.
+  #
   def delete_objects( *objects )
 
     return_value = nil
@@ -430,25 +333,6 @@ module ::Array::Hooked::ArrayInterface
     unless indexes.empty?
       return_value = delete_at_indexes( *indexes )
     end
-
-    return return_value
-
-  end
-
-  ##################################
-  #  delete_objects_without_hooks  #
-  ##################################
-
-  # Alias to :delete that bypasses hooks and takes multiple objects.
-  # @param [Array<Object>] objects Elements being deleted.
-  # @return [Object] Element returned.
-  def delete_objects_without_hooks( *objects )
-
-    @without_hooks = true
-
-    return_value = delete_objects( *objects )
-    
-    @without_hooks = false
 
     return return_value
 
@@ -484,7 +368,7 @@ module ::Array::Hooked::ArrayInterface
     
     if pre_delete_hook_result
       
-      deleted_object = perform_delete_between_hooks( index )
+      deleted_object = perform_delete_at_between_hooks( index )
 
       unless @without_hooks
         deleted_object = post_delete_hook( index, deleted_object )
@@ -495,25 +379,8 @@ module ::Array::Hooked::ArrayInterface
     return deleted_object
 
   end
-
-  #############################
-  #  delete_at_without_hooks  #
-  #############################
-
-  # Alias to :delete_at that bypasses hooks.
-  # @param [Fixnum] index Index to delete.
-  # @return [Object] Deleted element.
-  def delete_at_without_hooks( index )
-
-    @without_hooks = true
-
-    object = delete_at( index )
-    
-    @without_hooks = false
-
-    return object
-    
-  end
+  
+  alias_method :hooked_delete_at, :delete_at
 
   #######################
   #  delete_at_indexes  #
@@ -533,25 +400,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  #####################################
-  #  delete_at_indexes_without_hooks  #
-  #####################################
-
-  # Alias to :delete_at that bypasses hooks and takes multiple indexes.
-  # @param [Array<Fixnum>] index Index to delete.
-  # @return [Object] Deleted element.
-  def delete_at_indexes_without_hooks( *indexes )
-    
-    @without_hooks = true
-
-    objects = delete_at_indexes( *indexes )
-    
-    @without_hooks = false
-  
-    return objects
-    
-  end
-  
   ###############
   #  delete_if  #
   ###############
@@ -569,25 +417,6 @@ module ::Array::Hooked::ArrayInterface
     end
 
     delete_at_indexes( *indexes )
-
-    return self
-
-  end
-
-  #############################
-  #  delete_if_without_hooks  #
-  #############################
-
-  # Alias to :delete_if that bypasses hooks.
-  # @yield Block passed to :delete_if.
-  # @return [Object] Deleted element.
-  def delete_if_without_hooks( & block )
-
-    @without_hooks = true
-
-    delete_if( & block )
-    
-    @without_hooks = false
 
     return self
 
@@ -613,25 +442,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  ###########################
-  #  keep_if_without_hooks  #
-  ###########################
-
-  # Alias to :keep_if that bypasses hooks.
-  # @yield Block passed to :keep_if.
-  # @return [Object] Deleted element.
-  def keep_if_without_hooks( & block )
-
-    @without_hooks = true
-
-    keep_if( & block )
-    
-    @without_hooks = false
-
-    return self
-
-  end
-
   ##############
   #  compact!  #
   ##############
@@ -641,24 +451,6 @@ module ::Array::Hooked::ArrayInterface
     return keep_if do |object|
       object != nil
     end
-
-  end
-
-  ############################
-  #  compact_without_hooks!  #
-  ############################
-
-  # Alias to :compact that bypasses hooks.
-  # @return [Object] Self.
-  def compact_without_hooks!
-
-    @without_hooks = true
-
-    compact!
-    
-    @without_hooks = false
-
-    return self
 
   end
 
@@ -672,9 +464,9 @@ module ::Array::Hooked::ArrayInterface
 
     indexes = [ ]
 
-    self.each_with_index do |this_object, index|
+    self.each_with_index do |this_object, this_index|
       if this_object.is_a?( ::Array )
-        indexes.push( index )
+        indexes.push( this_index )
       end
     end
 
@@ -686,24 +478,6 @@ module ::Array::Hooked::ArrayInterface
       end
       return_value = self
     end
-
-    return return_value
-
-  end
-
-  ############################
-  #  flatten_without_hooks!  #
-  ############################
-
-  # Alias to :flatten that bypasses hooks.
-  # @return [Object] Self.
-  def flatten_without_hooks!
-
-    @without_hooks = true
-
-    return_value = flatten!
-    
-    @without_hooks = false
 
     return return_value
 
@@ -737,25 +511,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  ###########################
-  #  reject_without_hooks!  #
-  ###########################
-
-  # Alias to :reject that bypasses hooks.
-  # @yield Block passed to :keep_if.
-  # @return [Object] Self.
-  def reject_without_hooks!( & block )
-
-    @without_hooks = true
-
-    reject!( & block )
-    
-    @without_hooks = false
-
-    return return_value
-
-  end
-
   #############
   #  replace  #
   #############
@@ -774,25 +529,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  ###########################
-  #  replace_without_hooks  #
-  ###########################
-
-  # Alias to :replace that bypasses hooks.
-  # @param [Array] other_array Other array to replace self with.
-  # @return [Object] Self.
-  def replace_without_hooks( other_array )
-    
-    @without_hooks = true
-
-    replace( other_array )
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
   ##############
   #  reverse!  #
   ##############
@@ -801,29 +537,7 @@ module ::Array::Hooked::ArrayInterface
 
     reversed_array = reverse
 
-    clear
-
-    reversed_array.each_with_index do |this_object, index|
-      self[ index ] = this_object
-    end
-
-    return self
-
-  end
-
-  ############################
-  #  reverse_without_hooks!  #
-  ############################
-
-  # Alias to :reverse that bypasses hooks.
-  # @return [Object] Self.
-  def reverse_without_hooks!
-
-    @without_hooks = true
-
-    reverse!
-    
-    @without_hooks = false
+    replace( reversed_array )
 
     return self
 
@@ -842,25 +556,6 @@ module ::Array::Hooked::ArrayInterface
     reversed_array.each_with_index do |this_object, index|
       self[ index ] = this_object
     end
-
-    return self
-
-  end
-
-  ###########################
-  #  rotate_without_hooks!  #
-  ###########################
-
-  # Alias to :rotate that bypasses hooks.
-  # @param [Fixnum] rotate_count Integer count of how many elements to rotate.
-  # @return [Object] Self.
-  def rotate_without_hooks!( rotate_count = 1 )
-
-    @without_hooks = true
-
-    rotate!( rotate_count )
-    
-    @without_hooks = false
 
     return self
 
@@ -887,25 +582,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  ###########################
-  #  select_without_hooks!  #
-  ###########################
-
-  # Alias to :select that bypasses hooks.
-  # @yield Block passed to :select!.
-  # @return [Object] Self.
-  def select_without_hooks!( & block )
-  
-    @without_hooks = true
-
-    select!( & block )
-    
-    @without_hooks = false
-  
-    return self
-  
-  end
-  
   ##############
   #  shuffle!  #
   ##############
@@ -919,25 +595,6 @@ module ::Array::Hooked::ArrayInterface
     shuffled_array.each_with_index do |this_object, index|
       self[ index ] = this_object
     end
-
-    return self
-
-  end
-  
-  ############################
-  #  shuffle_without_hooks!  #
-  ############################
-
-  # Alias to :shuffle that bypasses hooks.
-  # @param [Object] random_number_generator Random number generator passed to :shuffle!.
-  # @return [Object] Self.
-  def shuffle_without_hooks!( random_number_generator = nil )
-
-    @without_hooks = true
-
-    shuffle!( random_number_generator )
-    
-    @without_hooks = false
 
     return self
 
@@ -963,28 +620,6 @@ module ::Array::Hooked::ArrayInterface
   
   alias_method :map!, :collect!
 
-  ############################
-  #  collect_without_hooks!  #
-  #  map_without_hooks!      #
-  ############################
-
-  # Alias to :select that bypasses hooks.
-  # @yield Block passed to :collect!.
-  # @return [Object] Self.
-  def collect_without_hooks!( & block )
-    
-    @without_hooks = true
-
-    collect!( & block )
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
-  alias_method :map_without_hooks!, :collect_without_hooks!
-  
   ###########
   #  sort!  #
   ###########
@@ -1003,25 +638,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  #########################
-  #  sort_without_hooks!  #
-  #########################
-
-  # Alias to :sort that bypasses hooks.
-  # @yield Block passed to :sort!.
-  # @return [Object] Self.
-  def sort_without_hooks!( & block )
-    
-    @without_hooks = true
-
-    sort!
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
   ##############
   #  sort_by!  #
   ##############
@@ -1042,25 +658,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  ############################
-  #  sort_by_without_hooks!  #
-  ############################
-
-  # Alias to :sort_by! that bypasses hooks.
-  # @yield Block passed to :sort_by!.
-  # @return [Object] Self.
-  def sort_by_without_hooks!( & block )
-    
-    @without_hooks = true
-
-    sort_by!( & block )
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
   ###########
   #  uniq!  #
   ###########
@@ -1083,24 +680,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  #########################
-  #  uniq_without_hooks!  #
-  #########################
-
-  # Alias to :uniq! that bypasses hooks.
-  # @return [Object] Self.
-  def uniq_without_hooks!
-
-    @without_hooks = true
-
-    return_value = uniq!
-    
-    @without_hooks = false
-
-    return return_value
-
-  end
-  
   #############
   #  unshift  #
   #############
@@ -1113,25 +692,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  ###########################
-  #  unshift_without_hooks  #
-  ###########################
-
-  # Alias to :unshift that bypasses hooks.
-  # @param [Object] object Object to unshift onto self.
-  # @return [Object] Self.
-  def unshift_without_hooks( object )
-
-    @without_hooks = true
-
-    unshift( object )
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
   #########
   #  pop  #
   #########
@@ -1144,24 +704,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  #######################
-  #  pop_without_hooks  #
-  #######################
-
-  # Alias to :pop that bypasses hooks.
-  # @return [Object] Self.
-  def pop_without_hooks
-
-    @without_hooks = true
-
-    object = pop
-    
-    @without_hooks = false
-
-    return object
-
-  end
-  
   ###########
   #  shift  #
   ###########
@@ -1174,24 +716,6 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
-  #########################
-  #  shift_without_hooks  #
-  #########################
-
-  # Alias to :shift that bypasses hooks.
-  # @return [Object] Self.
-  def shift_without_hooks
-
-    @without_hooks = true
-
-    object = shift
-    
-    @without_hooks = false
-    
-    return object
-    
-  end
-  
   ############
   #  slice!  #
   ############
@@ -1235,26 +759,6 @@ module ::Array::Hooked::ArrayInterface
     return slice
 
   end
-
-  ##########################
-  #  slice_without_hooks!  #
-  ##########################
-
-  # Alias to :slice! that bypasses hooks.
-  # @param [Fixnum] index_start_or_range Index at which to begin slice.
-  # @param [Fixnum] length Length of slice.
-  # @return [Object] Self.
-  def slice_without_hooks!( index_start_or_range, length = nil )
-
-    @without_hooks = true
-
-    slice = slice!( index_start_or_range, length )
-    
-    @without_hooks = false
-    
-    return slice
-    
-  end
   
   ###########
   #  clear  #
@@ -1274,6 +778,526 @@ module ::Array::Hooked::ArrayInterface
 
   end
 
+  ################################################  Without Hooks  #####################################################
+  
+  #######################
+  #  get_without_hooks  #
+  #######################
+
+  # Alias to :[] that bypasses hooks.
+  # @param [Fixnum] index Index at which set is taking place.
+  # @return [Object] Element returned.
+  def get_without_hooks( index )
+    
+    @without_hooks = true
+
+    self[ index ] = object
+    
+    @without_hooks = false
+    
+    return object
+    
+  end
+
+  #######################
+  #  set_without_hooks  #
+  #######################
+
+  # Alias to :[]= that bypasses hooks.
+  # @param [Fixnum] index Index at which set is taking place.
+  # @param [Object] object Element being set.
+  # @return [Object] Element returned.
+  def set_without_hooks( index, object )
+    
+    @without_hooks = true
+
+    self[ index ] = object
+    
+    @without_hooks = false
+    
+    return object
+    
+  end
+
+  ##########################
+  #  insert_without_hooks  #
+  ##########################
+
+  ###
+  # Alias to :insert that bypasses hooks.
+  #
+  # @param [Fixnum] index Index at which set is taking place.
+  #
+  # @param [Array<Object>] objects Elements being inserted.
+  #
+  # @return [Object] Element returned.
+  #
+  def insert_without_hooks( index, *objects )
+
+    @without_hooks = true
+
+    super( index, *objects )
+    
+    @without_hooks = false
+
+    return objects
+
+  end
+
+  ########################
+  #  push_without_hooks  #
+  ########################
+
+  # Alias to :push that bypasses hooks.
+  # @param [Array<Object>] objects Elements being pushed.
+  # @return [Object] Element returned.
+  def push_without_hooks( *objects )
+
+    @without_hooks = true
+
+    push( *objects )
+    
+    @without_hooks = false
+
+    return objects
+
+  end
+
+  ##########################
+  #  concat_without_hooks  #
+  ##########################
+
+  # Alias to :concat that bypasses hooks.
+  # @param [Array<Object>] objects Elements being concatenated.
+  # @return [Object] Element returned.
+  def concat_without_hooks( *arrays )
+
+    @without_hooks = true
+
+    concat( *arrays )
+    
+    @without_hooks = false
+
+    return arrays
+
+  end
+
+  ##########################
+  #  delete_without_hooks  #
+  ##########################
+
+  # Alias to :delete that bypasses hooks.
+  # @param [Object] object Element being deleted.
+  # @return [Object] Element returned.
+  def delete_without_hooks( object )
+
+    @without_hooks = true
+
+    return_value = delete( object )
+    
+    @without_hooks = false
+
+    return return_value
+
+  end
+
+  ##################################
+  #  delete_objects_without_hooks  #
+  ##################################
+
+  # Alias to :delete that bypasses hooks and takes multiple objects.
+  # @param [Array<Object>] objects Elements being deleted.
+  # @return [Object] Element returned.
+  def delete_objects_without_hooks( *objects )
+
+    @without_hooks = true
+
+    return_value = delete_objects( *objects )
+    
+    @without_hooks = false
+
+    return return_value
+
+  end
+
+  #############################
+  #  delete_at_without_hooks  #
+  #############################
+
+  # Alias to :delete_at that bypasses hooks.
+  # @param [Fixnum] index Index to delete.
+  # @return [Object] Deleted element.
+  def delete_at_without_hooks( index )
+
+    @without_hooks = true
+
+    object = delete_at( index )
+    
+    @without_hooks = false
+
+    return object
+    
+  end
+
+  #####################################
+  #  delete_at_indexes_without_hooks  #
+  #####################################
+
+  # Alias to :delete_at that bypasses hooks and takes multiple indexes.
+  # @param [Array<Fixnum>] index Index to delete.
+  # @return [Object] Deleted element.
+  def delete_at_indexes_without_hooks( *indexes )
+    
+    @without_hooks = true
+
+    objects = delete_at_indexes( *indexes )
+    
+    @without_hooks = false
+  
+    return objects
+    
+  end
+  
+  #############################
+  #  delete_if_without_hooks  #
+  #############################
+
+  # Alias to :delete_if that bypasses hooks.
+  # @yield Block passed to :delete_if.
+  # @return [Object] Deleted element.
+  def delete_if_without_hooks( & block )
+
+    @without_hooks = true
+
+    delete_if( & block )
+    
+    @without_hooks = false
+
+    return self
+
+  end
+
+  ###########################
+  #  keep_if_without_hooks  #
+  ###########################
+
+  # Alias to :keep_if that bypasses hooks.
+  # @yield Block passed to :keep_if.
+  # @return [Object] Deleted element.
+  def keep_if_without_hooks( & block )
+
+    @without_hooks = true
+
+    keep_if( & block )
+    
+    @without_hooks = false
+
+    return self
+
+  end
+
+  ############################
+  #  compact_without_hooks!  #
+  ############################
+
+  # Alias to :compact that bypasses hooks.
+  # @return [Object] Self.
+  def compact_without_hooks!
+
+    @without_hooks = true
+
+    compact!
+    
+    @without_hooks = false
+
+    return self
+
+  end
+
+  ############################
+  #  flatten_without_hooks!  #
+  ############################
+
+  # Alias to :flatten that bypasses hooks.
+  # @return [Object] Self.
+  def flatten_without_hooks!
+
+    @without_hooks = true
+
+    return_value = flatten!
+    
+    @without_hooks = false
+
+    return return_value
+
+  end
+
+  ###########################
+  #  reject_without_hooks!  #
+  ###########################
+
+  # Alias to :reject that bypasses hooks.
+  # @yield Block passed to :keep_if.
+  # @return [Object] Self.
+  def reject_without_hooks!( & block )
+
+    @without_hooks = true
+
+    reject!( & block )
+    
+    @without_hooks = false
+
+    return return_value
+
+  end
+
+  ###########################
+  #  replace_without_hooks  #
+  ###########################
+
+  # Alias to :replace that bypasses hooks.
+  # @param [Array] other_array Other array to replace self with.
+  # @return [Object] Self.
+  def replace_without_hooks( other_array )
+    
+    @without_hooks = true
+
+    replace( other_array )
+    
+    @without_hooks = false
+    
+    return self
+    
+  end
+  
+  ############################
+  #  reverse_without_hooks!  #
+  ############################
+
+  # Alias to :reverse that bypasses hooks.
+  # @return [Object] Self.
+  def reverse_without_hooks!
+
+    @without_hooks = true
+
+    reverse!
+    
+    @without_hooks = false
+
+    return self
+
+  end
+
+  ###########################
+  #  rotate_without_hooks!  #
+  ###########################
+
+  # Alias to :rotate that bypasses hooks.
+  # @param [Fixnum] rotate_count Integer count of how many elements to rotate.
+  # @return [Object] Self.
+  def rotate_without_hooks!( rotate_count = 1 )
+
+    @without_hooks = true
+
+    rotate!( rotate_count )
+    
+    @without_hooks = false
+
+    return self
+
+  end
+  
+  ###########################
+  #  select_without_hooks!  #
+  ###########################
+
+  # Alias to :select that bypasses hooks.
+  # @yield Block passed to :select!.
+  # @return [Object] Self.
+  def select_without_hooks!( & block )
+  
+    @without_hooks = true
+
+    select!( & block )
+    
+    @without_hooks = false
+  
+    return self
+  
+  end
+  
+  ############################
+  #  shuffle_without_hooks!  #
+  ############################
+
+  # Alias to :shuffle that bypasses hooks.
+  # @param [Object] random_number_generator Random number generator passed to :shuffle!.
+  # @return [Object] Self.
+  def shuffle_without_hooks!( random_number_generator = nil )
+
+    @without_hooks = true
+
+    shuffle!( random_number_generator )
+    
+    @without_hooks = false
+
+    return self
+
+  end
+
+  ############################
+  #  collect_without_hooks!  #
+  #  map_without_hooks!      #
+  ############################
+
+  # Alias to :select that bypasses hooks.
+  # @yield Block passed to :collect!.
+  # @return [Object] Self.
+  def collect_without_hooks!( & block )
+    
+    @without_hooks = true
+
+    collect!( & block )
+    
+    @without_hooks = false
+    
+    return self
+    
+  end
+  
+  alias_method :map_without_hooks!, :collect_without_hooks!
+  
+  #########################
+  #  sort_without_hooks!  #
+  #########################
+
+  # Alias to :sort that bypasses hooks.
+  # @yield Block passed to :sort!.
+  # @return [Object] Self.
+  def sort_without_hooks!( & block )
+    
+    @without_hooks = true
+
+    sort!
+    
+    @without_hooks = false
+    
+    return self
+    
+  end
+  
+  ############################
+  #  sort_by_without_hooks!  #
+  ############################
+
+  # Alias to :sort_by! that bypasses hooks.
+  # @yield Block passed to :sort_by!.
+  # @return [Object] Self.
+  def sort_by_without_hooks!( & block )
+    
+    @without_hooks = true
+
+    sort_by!( & block )
+    
+    @without_hooks = false
+    
+    return self
+    
+  end
+  
+  #########################
+  #  uniq_without_hooks!  #
+  #########################
+
+  # Alias to :uniq! that bypasses hooks.
+  # @return [Object] Self.
+  def uniq_without_hooks!
+
+    @without_hooks = true
+
+    return_value = uniq!
+    
+    @without_hooks = false
+
+    return return_value
+
+  end
+  
+  ###########################
+  #  unshift_without_hooks  #
+  ###########################
+
+  # Alias to :unshift that bypasses hooks.
+  # @param [Object] object Object to unshift onto self.
+  # @return [Object] Self.
+  def unshift_without_hooks( object )
+
+    @without_hooks = true
+
+    unshift( object )
+    
+    @without_hooks = false
+    
+    return self
+    
+  end
+  
+  #######################
+  #  pop_without_hooks  #
+  #######################
+
+  # Alias to :pop that bypasses hooks.
+  # @return [Object] Self.
+  def pop_without_hooks
+
+    @without_hooks = true
+
+    object = pop
+    
+    @without_hooks = false
+
+    return object
+
+  end
+  
+  #########################
+  #  shift_without_hooks  #
+  #########################
+
+  # Alias to :shift that bypasses hooks.
+  # @return [Object] Self.
+  def shift_without_hooks
+
+    @without_hooks = true
+
+    object = shift
+    
+    @without_hooks = false
+    
+    return object
+    
+  end
+  
+  ##########################
+  #  slice_without_hooks!  #
+  ##########################
+
+  # Alias to :slice! that bypasses hooks.
+  # @param [Fixnum] index_start_or_range Index at which to begin slice.
+  # @param [Fixnum] length Length of slice.
+  # @return [Object] Self.
+  def slice_without_hooks!( index_start_or_range, length = nil )
+
+    @without_hooks = true
+
+    slice = slice!( index_start_or_range, length )
+    
+    @without_hooks = false
+    
+    return slice
+    
+  end
+
   #########################
   #  clear_without_hooks  #
   #########################
@@ -1289,6 +1313,98 @@ module ::Array::Hooked::ArrayInterface
     @without_hooks = false
     
     return self
+    
+  end
+
+  ######################################################################################################################
+      private ##########################################################################################################
+  ######################################################################################################################
+
+  ###########################
+  #  filter_insert_objects  #
+  ###########################
+  
+  def filter_insert_objects( index, objects )
+    
+    # if we have less elements in self than the index we are inserting at
+    # we need to make sure the nils inserted cascade
+    if index > count
+      nils_created = index - count
+      index -= nils_created
+      nils_created.times do |this_time|
+        objects.unshift( nil )
+      end
+    end
+
+    return index
+    
+  end
+
+  ###############################
+  #  perform_get_between_hooks  #
+  ###############################
+  
+  def perform_get_between_hooks( index, *objects )
+    
+    return undecorated_get( index, *objects )
+    
+  end
+
+  ###############################
+  #  perform_set_between_hooks  #
+  ###############################
+  
+  def perform_set_between_hooks( index, object )
+    
+    undecorated_set( index, object )
+    
+    return true
+    
+  end
+
+  ##################################
+  #  perform_insert_between_hooks  #
+  ##################################
+  
+  def perform_insert_between_hooks( index, *objects )
+    
+    first_index = index
+    
+    current_index = index
+    
+    objects.each do |this_object|
+      # if we get nil back thats an insert did not happen
+      if index = perform_single_object_insert_between_hooks( index, this_object )
+        index += 1
+        current_index = index
+      else
+        index = current_index
+      end
+    end
+    
+    return first_index
+    
+  end
+
+  ################################################
+  #  perform_single_object_insert_between_hooks  #
+  ################################################
+  
+  def perform_single_object_insert_between_hooks( index, object )
+    
+    undecorated_insert( index, object )
+    
+    return index
+    
+  end
+  
+  #####################################
+  #  perform_delete_at_between_hooks  #
+  #####################################
+  
+  def perform_delete_at_between_hooks( index, *objects )
+
+    return undecorated_delete_at( index )
     
   end
   
