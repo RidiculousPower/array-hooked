@@ -14,7 +14,3 @@ Renamed from hooked-array to array-hooked. File schema updated to reflect gem na
 == 7/4/2012
 
 Updated to use module-cluster to ensure interface encapsulation.
-
-== 7/9/2012
-
-Removed module-cluster dependency.
