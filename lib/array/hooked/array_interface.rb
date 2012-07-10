@@ -2,64 +2,7 @@
 module ::Array::Hooked::ArrayInterface
 
   instances_identify_as!( ::Array::Hooked )
-  
-  extend ::Module::Cluster
-  
-  cluster( :hooked_array_interface ).before_include.cascade_to( :class ) do |hooked_instance|
     
-    hooked_instance.class_eval do
-      
-      #####################
-      #  undecorated_set  #
-      #####################
-
-      # Alias to original :[]= method. Used to perform actual set between hooks.
-      # @param [Fixnum] index Index at which set is taking place.
-      # @param [Object] object Element being set.
-      # @return [Object] Element returned.
-      unless method_defined?( :undecorated_set )
-        alias_method :undecorated_set, :[]=
-      end
-
-      #####################
-      #  undecorated_get  #
-      #####################
-
-      # Alias to original :[]= method. Used to perform actual set between hooks.
-      # @param [Fixnum] index Index at which set is taking place.
-      # @param [Object] object Element being set.
-      # @return [Object] Element returned.
-      unless method_defined?( :undecorated_get )
-        alias_method :undecorated_get, :[]
-      end
-      
-      ########################
-      #  undecorated_insert  #
-      ########################
-
-      # Alias to original :insert method. Used to perform actual insert between hooks.
-      # @param [Fixnum] index Index at which insert is taking place.
-      # @param [Array<Object>] objects Elements being inserted.
-      # @return [Object] Element returned.
-      unless method_defined?( :undecorated_insert )
-        alias_method :undecorated_insert, :insert
-      end
-      
-      ###########################
-      #  undecorated_delete_at  #
-      ###########################
-
-      # Alias to original :delete method. Used to perform actual delete between hooks.
-      # @param [Fixnum] index Index at which delete is taking place.
-      # @return [Object] Element returned.
-      unless method_defined?( :undecorated_delete_at )
-        alias_method :undecorated_delete_at, :delete_at
-      end
-      
-    end
-    
-  end
-  
   ################
   #  initialize  #
   ################
