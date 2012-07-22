@@ -1,6 +1,8 @@
 
 module ::Array::Hooked::ArrayInterface
-
+  
+  include ::IdentifiesAs
+  
   instances_identify_as!( ::Array::Hooked )
   
   extend ::Module::Cluster
@@ -766,13 +768,7 @@ module ::Array::Hooked::ArrayInterface
 
   def clear
 
-    indexes = [ ]
-
-    count.times do |this_time|
-      indexes.push( count - this_time - 1 )
-    end
-
-    delete_at_indexes( *indexes )
+    delete_if { true }
 
     return self
 
