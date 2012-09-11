@@ -6,54 +6,115 @@ module ::Array::Hooked::ArrayInterface
   instances_identify_as!( ::Array::Hooked )
   
   extend ::Module::Cluster
-  
-  cluster( :hooked_array_interface ).before_include.cascade_to( :class ) do |hooked_instance|
+
+  #####################
+  #  undecorated_set  #
+  #####################
+
+  ###
+  # Alias to original :[]= method. Used to perform actual set between hooks.
+  #
+  # @param [Integer] index
+  # 
+  #        Index at which set is taking place.
+  #
+  # @param [Object] object 
+  #
+  #        Element being set.
+  #
+  # @return [Object] 
+  #
+  #         Element set.
+  #
+  cluster( :undecorated_set ).before_include.cascade_to( :class ) do |hooked_instance|
     
     hooked_instance.class_eval do
       
-      #####################
-      #  undecorated_set  #
-      #####################
-
-      # Alias to original :[]= method. Used to perform actual set between hooks.
-      # @param [Fixnum] index Index at which set is taking place.
-      # @param [Object] object Element being set.
-      # @return [Object] Element returned.
       unless method_defined?( :undecorated_set )
         alias_method :undecorated_set, :[]=
       end
+    
+    end
+  
+  end
+  
+  #####################
+  #  undecorated_get  #
+  #####################
 
-      #####################
-      #  undecorated_get  #
-      #####################
-
-      # Alias to original :[]= method. Used to perform actual set between hooks.
-      # @param [Fixnum] index Index at which set is taking place.
-      # @param [Object] object Element being set.
-      # @return [Object] Element returned.
+  ###
+  # Alias to original :[] method. Used to perform actual get between hooks.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which get is requested.
+  #
+  # @return [Object] 
+  #
+  #         Element requested.
+  #
+  cluster( :undecorated_get ).before_include.cascade_to( :class ) do |hooked_instance|
+    
+    hooked_instance.class_eval do
+      
       unless method_defined?( :undecorated_get )
         alias_method :undecorated_get, :[]
       end
       
-      ########################
-      #  undecorated_insert  #
-      ########################
+    end
+    
+  end
 
-      # Alias to original :insert method. Used to perform actual insert between hooks.
-      # @param [Fixnum] index Index at which insert is taking place.
-      # @param [Array<Object>] objects Elements being inserted.
-      # @return [Object] Element returned.
+  ########################
+  #  undecorated_insert  #
+  ########################
+
+  ###
+  # Alias to original :insert method. Used to perform actual insert between hooks.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which insert is taking place.
+  #
+  # @param [Array<Object>] objects 
+  #
+  #        Elements being inserted.
+  #
+  # @return [Object] 
+  #
+  #         Elements inserted.
+  #
+  cluster( :undecorated_insert ).before_include.cascade_to( :class ) do |hooked_instance|
+    
+    hooked_instance.class_eval do
+      
       unless method_defined?( :undecorated_insert )
         alias_method :undecorated_insert, :insert
       end
       
-      ###########################
-      #  undecorated_delete_at  #
-      ###########################
+    end
+    
+  end
 
-      # Alias to original :delete method. Used to perform actual delete between hooks.
-      # @param [Fixnum] index Index at which delete is taking place.
-      # @return [Object] Element returned.
+  ###########################
+  #  undecorated_delete_at  #
+  ###########################
+
+  ###
+  # Alias to original :delete method. Used to perform actual delete between hooks.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which delete is taking place.
+  #
+  # @return [Object] 
+  #
+  #         Element deleted.
+  #
+  cluster( :undecorated_delete_at ).before_include.cascade_to( :class ) do |hooked_instance|
+    
+    hooked_instance.class_eval do
+            
       unless method_defined?( :undecorated_delete_at )
         alias_method :undecorated_delete_at, :delete_at
       end
@@ -66,16 +127,28 @@ module ::Array::Hooked::ArrayInterface
   #  initialize  #
   ################
 
+  ###
   # Initialize with reference a configuration instance.
-  # @param [Object] object Object that HookedArray instance is attached to, primarily useful for
-  #  reference from hooks.
-  # @param [Array<Object>] args Parameters passed through super to Array#initialize.
-  # @return [true,false] Whether receiver identifies as object.
-  def initialize( configuration_instance = nil, *args )
+  #
+  # @overload initialize( configuration_instance, array_initialization_arg, ... )
+  #
+  #   @param [Object] configuration_instance 
+  #   
+  #          Object that instance will be attached to; primarily useful for reference from hooks.
+  #   
+  #   @param [Array<Object>] array_initialization_arg 
+  #   
+  #          Parameters passed through super to Array#initialize.
+  #
+  # @return [true,false] 
+  #
+  #         Whether receiver identifies as object.
+  #
+  def initialize( configuration_instance = nil, *array_initialization_args )
     
     @configuration_instance = configuration_instance
 
-    super( *args )
+    super( *array_initialization_args )
         
   end
   
@@ -83,6 +156,13 @@ module ::Array::Hooked::ArrayInterface
   #  configuration_instance  #
   ############################
 
+  ###
+  # @!attribute [r]
+  #
+  # @return [Object]
+  #
+  #         Object that instance is attached to; primarily useful for reference from hooks.
+  #
   attr_accessor :configuration_instance
   
   ################################################  Subclass Hooks  ####################################################
@@ -91,11 +171,25 @@ module ::Array::Hooked::ArrayInterface
   #  pre_set_hook  #
   ##################
 
+  ###
   # A hook that is called before setting a value; return value is used in place of object.
-  # @param [Fixnum] index Index at which set/insert is taking place.
-  # @param [Object] object Element being set/inserted.
-  # @param [true,false] is_insert Whether this set is inserting a new index.
-  # @return [true,false] Return value is used in place of object.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which set/insert is taking place.
+  #
+  # @param [Object] object 
+  #
+  #        Element being set/inserted.
+  #
+  # @param [true,false] is_insert 
+  #
+  #        Whether this set is inserting a new index.
+  #
+  # @return [true,false] 
+  #
+  #         Return value is used in place of object.
+  #
   def pre_set_hook( index, object, is_insert = false )
 
     return object
@@ -106,11 +200,23 @@ module ::Array::Hooked::ArrayInterface
   #  post_set_hook  #
   ###################
 
+  ###
   # A hook that is called after setting a value.
-  # @param [Fixnum] index Index at which set/insert is taking place.
-  # @param [Object] object Element being set/inserted.
-  # @param [true,false] is_insert Whether this set is inserting a new index.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which set/insert is taking place.
+  #
+  # @param [Object] object 
+  #
+  #        Element being set/inserted.
+  #
+  # @param [true,false] is_insert 
+  #
+  #        Whether this set is inserting a new index.
+  #
   # @return [Object] Ignored.
+  #
   def post_set_hook( index, object, is_insert = false )
     
     return object
@@ -121,9 +227,17 @@ module ::Array::Hooked::ArrayInterface
   #  pre_get_hook  #
   ##################
 
+  ###
   # A hook that is called before getting a value; if return value is false, get does not occur.
-  # @param [Fixnum] index Index at which set/insert is taking place.
-  # @return [true,false] If return value is false, get does not occur.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which set/insert is taking place.
+  #
+  # @return [true,false] 
+  #
+  #         If return value is false, get does not occur.
+  #
   def pre_get_hook( index )
     
     # false means get does not take place
@@ -135,10 +249,19 @@ module ::Array::Hooked::ArrayInterface
   #  post_get_hook  #
   ###################
 
+  ###
   # A hook that is called after getting a value.
-  # @param [Fixnum] index Index at which get is taking place.
-  # @param [Object] object Element being set/inserted.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which get is taking place.
+  #
+  # @param [Object] object 
+  #
+  #        Element retrieved.
+  #
   # @return [Object] Object returned in place of get result.
+  #
   def post_get_hook( index, object )
     
     return object
@@ -149,9 +272,17 @@ module ::Array::Hooked::ArrayInterface
   #  pre_delete_hook  #
   #####################
 
+  ###
   # A hook that is called before deleting a value; if return value is false, delete does not occur.
-  # @param [Fixnum] index Index at which delete is taking place.
-  # @return [true,false] If return value is false, delete does not occur.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which delete is taking place.
+  #
+  # @return [true,false] 
+  #
+  #         If return value is false, delete does not occur.
+  #
   def pre_delete_hook( index )
     
     # false means delete does not take place
@@ -163,10 +294,21 @@ module ::Array::Hooked::ArrayInterface
   #  post_delete_hook  #
   ######################
 
+  ###
   # A hook that is called after deleting a value.
-  # @param [Fixnum] index Index at which delete took place.
-  # @param [Object] object Element deleted.
-  # @return [Object] Object returned in place of delete result.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which delete took place.
+  #
+  # @param [Object] object 
+  #
+  #        Element deleted.
+  #
+  # @return [Object] 
+  #
+  #         Object returned in place of delete result.
+  #
   def post_delete_hook( index, object )
     
     return object
@@ -209,10 +351,6 @@ module ::Array::Hooked::ArrayInterface
   ################
 
   def []=( index, object )
-
-    # we are either replacing or adding at the end
-    # if we are replacing we are either replacing a parent element or an element in self
-    # * if replacing parent element, track and exclude parent changes
 
     unless @without_hooks
       object = pre_set_hook( index, object, false )
@@ -387,7 +525,20 @@ module ::Array::Hooked::ArrayInterface
   #######################
   #  delete_at_indexes  #
   #######################
-
+  
+  ###
+  # Perform delete_at on multiple indexes.
+  #
+  # @overload delete_at_indexes( index, ... )
+  #
+  #   @param [Integer] index
+  #
+  #          Index that should be deleted.
+  #
+  # @return [Array<Object>]
+  #
+  #         Objects deleted.
+  #
   def delete_at_indexes( *indexes )
 
     indexes = indexes.sort.uniq.reverse
@@ -781,8 +932,15 @@ module ::Array::Hooked::ArrayInterface
   #######################
 
   # Alias to :[] that bypasses hooks.
-  # @param [Fixnum] index Index at which set is taking place.
-  # @return [Object] Element returned.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which set is taking place.
+  #
+  # @return [Object] 
+  #
+  #         Element returned.
+  #
   def get_without_hooks( index )
     
     @without_hooks = true
@@ -800,9 +958,19 @@ module ::Array::Hooked::ArrayInterface
   #######################
 
   # Alias to :[]= that bypasses hooks.
-  # @param [Fixnum] index Index at which set is taking place.
-  # @param [Object] object Element being set.
-  # @return [Object] Element returned.
+  #
+  # @param [Integer] index 
+  #
+  #        Index at which set is taking place.
+  #
+  # @param [Object] object 
+  #
+  #        Element being set.
+  #
+  # @return [Object] 
+  #
+  #         Element returned.
+  #
   def set_without_hooks( index, object )
     
     @without_hooks = true
@@ -822,11 +990,17 @@ module ::Array::Hooked::ArrayInterface
   ###
   # Alias to :insert that bypasses hooks.
   #
-  # @param [Fixnum] index Index at which set is taking place.
+  # @param [Integer] index 
   #
-  # @param [Array<Object>] objects Elements being inserted.
+  #        Index at which set is taking place.
   #
-  # @return [Object] Element returned.
+  # @param [Array<Object>] objects 
+  #
+  #        Elements being inserted.
+  #
+  # @return [Object] 
+  #
+  #         Element returned.
   #
   def insert_without_hooks( index, *objects )
 
@@ -845,8 +1019,17 @@ module ::Array::Hooked::ArrayInterface
   ########################
 
   # Alias to :push that bypasses hooks.
-  # @param [Array<Object>] objects Elements being pushed.
-  # @return [Object] Element returned.
+  #
+  # @overload push_without_hooks( object, ... )
+  #
+  #   @param [Array<Object>] object
+  #   
+  #          Elements being pushed.
+  #
+  # @return [Object,Array<Object>] 
+  #
+  #         Element(s) pushed.
+  #
   def push_without_hooks( *objects )
 
     @without_hooks = true
@@ -855,7 +1038,7 @@ module ::Array::Hooked::ArrayInterface
     
     @without_hooks = false
 
-    return objects
+    return objects.count > 1 ? objects : objects[ 0 ]
 
   end
 
@@ -864,8 +1047,15 @@ module ::Array::Hooked::ArrayInterface
   ##########################
 
   # Alias to :concat that bypasses hooks.
-  # @param [Array<Object>] objects Elements being concatenated.
-  # @return [Object] Element returned.
+  #
+  # @param [Array<Object>] objects 
+  #
+  #        Elements being concatenated.
+  #
+  # @return [Object] 
+  #
+  #         Element returned.
+  #
   def concat_without_hooks( *arrays )
 
     @without_hooks = true
@@ -883,8 +1073,15 @@ module ::Array::Hooked::ArrayInterface
   ##########################
 
   # Alias to :delete that bypasses hooks.
-  # @param [Object] object Element being deleted.
-  # @return [Object] Element returned.
+  #
+  # @param [Object] object 
+  #
+  #        Element being deleted.
+  #
+  # @return [Object] 
+  #
+  #         Element returned.
+  #
   def delete_without_hooks( object )
 
     @without_hooks = true
@@ -902,8 +1099,15 @@ module ::Array::Hooked::ArrayInterface
   ##################################
 
   # Alias to :delete that bypasses hooks and takes multiple objects.
-  # @param [Array<Object>] objects Elements being deleted.
-  # @return [Object] Element returned.
+  #
+  # @param [Array<Object>] objects 
+  #
+  #        Elements being deleted.
+  #
+  # @return [Object] 
+  #
+  #         Element returned.
+  #
   def delete_objects_without_hooks( *objects )
 
     @without_hooks = true
@@ -921,8 +1125,15 @@ module ::Array::Hooked::ArrayInterface
   #############################
 
   # Alias to :delete_at that bypasses hooks.
-  # @param [Fixnum] index Index to delete.
-  # @return [Object] Deleted element.
+  #
+  # @param [Integer] index 
+  #
+  #        Index to delete.
+  #
+  # @return [Object] 
+  #
+  #         Deleted element.
+  #
   def delete_at_without_hooks( index )
 
     @without_hooks = true
@@ -939,9 +1150,17 @@ module ::Array::Hooked::ArrayInterface
   #  delete_at_indexes_without_hooks  #
   #####################################
 
+  ###
   # Alias to :delete_at that bypasses hooks and takes multiple indexes.
-  # @param [Array<Fixnum>] index Index to delete.
-  # @return [Object] Deleted element.
+  #
+  # @param [Array<Integer>] index 
+  #
+  #        Index to delete.
+  #
+  # @return [Object] 
+  #
+  #         Deleted element.
+  #
   def delete_at_indexes_without_hooks( *indexes )
     
     @without_hooks = true
@@ -958,9 +1177,17 @@ module ::Array::Hooked::ArrayInterface
   #  delete_if_without_hooks  #
   #############################
 
+  ###
   # Alias to :delete_if that bypasses hooks.
-  # @yield Block passed to :delete_if.
-  # @return [Object] Deleted element.
+  #
+  # @yield 
+  #
+  #   Block passed to :delete_if.
+  #
+  # @return [Object] 
+  #
+  #         Deleted element.
+  #
   def delete_if_without_hooks( & block )
 
     @without_hooks = true
@@ -977,9 +1204,17 @@ module ::Array::Hooked::ArrayInterface
   #  keep_if_without_hooks  #
   ###########################
 
+  ###
   # Alias to :keep_if that bypasses hooks.
-  # @yield Block passed to :keep_if.
-  # @return [Object] Deleted element.
+  #
+  # @yield 
+  #
+  #   Block passed to :keep_if.
+  #
+  # @return [Object] 
+  #
+  #         Deleted element.
+  #
   def keep_if_without_hooks( & block )
 
     @without_hooks = true
@@ -996,8 +1231,13 @@ module ::Array::Hooked::ArrayInterface
   #  compact_without_hooks!  #
   ############################
 
+  ###
   # Alias to :compact that bypasses hooks.
-  # @return [Object] Self.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def compact_without_hooks!
 
     @without_hooks = true
@@ -1014,8 +1254,13 @@ module ::Array::Hooked::ArrayInterface
   #  flatten_without_hooks!  #
   ############################
 
+  ###
   # Alias to :flatten that bypasses hooks.
-  # @return [Object] Self.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def flatten_without_hooks!
 
     @without_hooks = true
@@ -1032,9 +1277,17 @@ module ::Array::Hooked::ArrayInterface
   #  reject_without_hooks!  #
   ###########################
 
+  ###
   # Alias to :reject that bypasses hooks.
-  # @yield Block passed to :keep_if.
-  # @return [Object] Self.
+  #
+  # @yield 
+  #
+  #   Block passed to :keep_if.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def reject_without_hooks!( & block )
 
     @without_hooks = true
@@ -1051,9 +1304,17 @@ module ::Array::Hooked::ArrayInterface
   #  replace_without_hooks  #
   ###########################
 
+  ###
   # Alias to :replace that bypasses hooks.
-  # @param [Array] other_array Other array to replace self with.
-  # @return [Object] Self.
+  #
+  # @param [Array] other_array 
+  #
+  #        Other array to replace self with.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def replace_without_hooks( other_array )
     
     @without_hooks = true
@@ -1070,8 +1331,13 @@ module ::Array::Hooked::ArrayInterface
   #  reverse_without_hooks!  #
   ############################
 
+  ###
   # Alias to :reverse that bypasses hooks.
-  # @return [Object] Self.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def reverse_without_hooks!
 
     @without_hooks = true
@@ -1088,9 +1354,17 @@ module ::Array::Hooked::ArrayInterface
   #  rotate_without_hooks!  #
   ###########################
 
+  ###
   # Alias to :rotate that bypasses hooks.
-  # @param [Fixnum] rotate_count Integer count of how many elements to rotate.
-  # @return [Object] Self.
+  #
+  # @param [Integer] rotate_count 
+  #
+  #        Integer count of how many elements to rotate.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def rotate_without_hooks!( rotate_count = 1 )
 
     @without_hooks = true
@@ -1107,9 +1381,17 @@ module ::Array::Hooked::ArrayInterface
   #  select_without_hooks!  #
   ###########################
 
+  ###
   # Alias to :select that bypasses hooks.
-  # @yield Block passed to :select!.
-  # @return [Object] Self.
+  #
+  # @yield 
+  #
+  #   Block passed to :select!.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def select_without_hooks!( & block )
   
     @without_hooks = true
@@ -1126,9 +1408,17 @@ module ::Array::Hooked::ArrayInterface
   #  shuffle_without_hooks!  #
   ############################
 
+  ###
   # Alias to :shuffle that bypasses hooks.
-  # @param [Object] random_number_generator Random number generator passed to :shuffle!.
-  # @return [Object] Self.
+  #
+  # @param [Object] random_number_generator 
+  #
+  #        Random number generator passed to :shuffle!.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def shuffle_without_hooks!( random_number_generator = nil )
 
     @without_hooks = true
@@ -1146,9 +1436,17 @@ module ::Array::Hooked::ArrayInterface
   #  map_without_hooks!      #
   ############################
 
+  ###
   # Alias to :select that bypasses hooks.
-  # @yield Block passed to :collect!.
-  # @return [Object] Self.
+  #
+  # @yield 
+  #
+  #   Block passed to :collect!.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def collect_without_hooks!( & block )
     
     @without_hooks = true
@@ -1167,9 +1465,17 @@ module ::Array::Hooked::ArrayInterface
   #  sort_without_hooks!  #
   #########################
 
+  ###
   # Alias to :sort that bypasses hooks.
-  # @yield Block passed to :sort!.
-  # @return [Object] Self.
+  #
+  # @yield 
+  #
+  #   Block passed to :sort!.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def sort_without_hooks!( & block )
     
     @without_hooks = true
@@ -1186,9 +1492,17 @@ module ::Array::Hooked::ArrayInterface
   #  sort_by_without_hooks!  #
   ############################
 
+  ###
   # Alias to :sort_by! that bypasses hooks.
-  # @yield Block passed to :sort_by!.
-  # @return [Object] Self.
+  #
+  # @yield 
+  #
+  #   Block passed to :sort_by!.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def sort_by_without_hooks!( & block )
     
     @without_hooks = true
@@ -1205,8 +1519,13 @@ module ::Array::Hooked::ArrayInterface
   #  uniq_without_hooks!  #
   #########################
 
+  ###
   # Alias to :uniq! that bypasses hooks.
-  # @return [Object] Self.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def uniq_without_hooks!
 
     @without_hooks = true
@@ -1223,9 +1542,17 @@ module ::Array::Hooked::ArrayInterface
   #  unshift_without_hooks  #
   ###########################
 
+  ###
   # Alias to :unshift that bypasses hooks.
-  # @param [Object] object Object to unshift onto self.
-  # @return [Object] Self.
+  #
+  # @param [Object] object 
+  #
+  #        Object to unshift onto self.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def unshift_without_hooks( object )
 
     @without_hooks = true
@@ -1242,8 +1569,13 @@ module ::Array::Hooked::ArrayInterface
   #  pop_without_hooks  #
   #######################
 
+  ###
   # Alias to :pop that bypasses hooks.
-  # @return [Object] Self.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def pop_without_hooks
 
     @without_hooks = true
@@ -1260,8 +1592,13 @@ module ::Array::Hooked::ArrayInterface
   #  shift_without_hooks  #
   #########################
 
+  ###
   # Alias to :shift that bypasses hooks.
-  # @return [Object] Self.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def shift_without_hooks
 
     @without_hooks = true
@@ -1278,10 +1615,21 @@ module ::Array::Hooked::ArrayInterface
   #  slice_without_hooks!  #
   ##########################
 
+  ###
   # Alias to :slice! that bypasses hooks.
-  # @param [Fixnum] index_start_or_range Index at which to begin slice.
-  # @param [Fixnum] length Length of slice.
-  # @return [Object] Self.
+  #
+  # @param [Integer] index_start_or_range 
+  #
+  #        Index at which to begin slice.
+  #
+  # @param [Integer] length 
+  #
+  #        Length of slice.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def slice_without_hooks!( index_start_or_range, length = nil )
 
     @without_hooks = true
@@ -1298,8 +1646,13 @@ module ::Array::Hooked::ArrayInterface
   #  clear_without_hooks  #
   #########################
 
+  ###
   # Alias to :clear that bypasses hooks.
-  # @return [Object] Self.
+  #
+  # @return [Object] 
+  #
+  #         Self.
+  #
   def clear_without_hooks
 
     @without_hooks = true
