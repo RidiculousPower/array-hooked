@@ -12,7 +12,7 @@ module ::Array::Hooked::ArrayInterface
   #####################
 
   ###
-  # Alias to original :[]= method. Used to perform actual set between hooks.
+  # Alias to original #[]= method. Used to perform actual set between hooks.
   #
   # @param [Integer] index
   # 
@@ -43,7 +43,7 @@ module ::Array::Hooked::ArrayInterface
   #####################
 
   ###
-  # Alias to original :[] method. Used to perform actual get between hooks.
+  # Alias to original #[] method. Used to perform actual get between hooks.
   #
   # @param [Integer] index 
   #
@@ -70,15 +70,17 @@ module ::Array::Hooked::ArrayInterface
   ########################
 
   ###
-  # Alias to original :insert method. Used to perform actual insert between hooks.
+  # Alias to original #insert method. Used to perform actual insert between hooks.
   #
-  # @param [Integer] index 
+  # @overload undecorated_insert( index, object, ... )
   #
-  #        Index at which insert is taking place.
-  #
-  # @param [Array<Object>] objects 
-  #
-  #        Elements being inserted.
+  #   @param [Integer] index 
+  #   
+  #          Index at which insert is taking place.
+  #   
+  #   @param [Object] object
+  #   
+  #          Elements being inserted.
   #
   # @return [Object] 
   #
@@ -101,7 +103,7 @@ module ::Array::Hooked::ArrayInterface
   ###########################
 
   ###
-  # Alias to original :delete method. Used to perform actual delete between hooks.
+  # Alias to original #delete method. Used to perform actual delete between hooks.
   #
   # @param [Integer] index 
   #
@@ -136,7 +138,7 @@ module ::Array::Hooked::ArrayInterface
   #   
   #          Object that instance will be attached to; primarily useful for reference from hooks.
   #   
-  #   @param [Array<Object>] array_initialization_arg 
+  #   @param [Object] array_initialization_arg 
   #   
   #          Parameters passed through super to Array#initialize.
   #
@@ -186,7 +188,7 @@ module ::Array::Hooked::ArrayInterface
   #
   #        Whether this set is inserting a new index.
   #
-  # @return [true,false] 
+  # @return [Object] 
   #
   #         Return value is used in place of object.
   #
@@ -215,7 +217,9 @@ module ::Array::Hooked::ArrayInterface
   #
   #        Whether this set is inserting a new index.
   #
-  # @return [Object] Ignored.
+  # @return [Object] 
+  #
+  #         Ignored.
   #
   def post_set_hook( index, object, is_insert = false )
     
@@ -260,7 +264,9 @@ module ::Array::Hooked::ArrayInterface
   #
   #        Element retrieved.
   #
-  # @return [Object] Object returned in place of get result.
+  # @return [Object] 
+  #
+  #         Object returned in place of get result.
   #
   def post_get_hook( index, object )
     
@@ -333,7 +339,7 @@ module ::Array::Hooked::ArrayInterface
     
     if should_get
       
-      object = super( index )
+      object = perform_get_between_hooks( index )
     
       unless @without_hooks
         object = post_get_hook( index, object )
@@ -456,7 +462,9 @@ module ::Array::Hooked::ArrayInterface
   #
   #   @param object Object to delete.
   #
-  # @return [Array<Object>] Deleted objects.
+  # @return [Array<Object>] 
+  #
+  #         Deleted objects.
   #
   def delete_objects( *objects )
 
@@ -931,7 +939,7 @@ module ::Array::Hooked::ArrayInterface
   #  get_without_hooks  #
   #######################
 
-  # Alias to :[] that bypasses hooks.
+  # Alias to #[] that bypasses hooks.
   #
   # @param [Integer] index 
   #
@@ -957,7 +965,8 @@ module ::Array::Hooked::ArrayInterface
   #  set_without_hooks  #
   #######################
 
-  # Alias to :[]= that bypasses hooks.
+  ###
+  # Alias to #[]= that bypasses hooks.
   #
   # @param [Integer] index 
   #
@@ -988,15 +997,17 @@ module ::Array::Hooked::ArrayInterface
   ##########################
 
   ###
-  # Alias to :insert that bypasses hooks.
+  # Alias to #insert that bypasses hooks.
   #
-  # @param [Integer] index 
+  # @overload insert_without_hooks( index, object, ... )
   #
-  #        Index at which set is taking place.
-  #
-  # @param [Array<Object>] objects 
-  #
-  #        Elements being inserted.
+  #   @param [Integer] index 
+  #   
+  #          Index at which set is taking place.
+  #   
+  #   @param [Object] object
+  #   
+  #          Elements being inserted.
   #
   # @return [Object] 
   #
@@ -1018,15 +1029,16 @@ module ::Array::Hooked::ArrayInterface
   #  push_without_hooks  #
   ########################
 
-  # Alias to :push that bypasses hooks.
+  ###
+  # Alias to #push that bypasses hooks.
   #
   # @overload push_without_hooks( object, ... )
   #
-  #   @param [Array<Object>] object
+  #   @param [Object] object
   #   
   #          Elements being pushed.
   #
-  # @return [Object,Array<Object>] 
+  # @return [Array<Object>] 
   #
   #         Element(s) pushed.
   #
@@ -1038,7 +1050,7 @@ module ::Array::Hooked::ArrayInterface
     
     @without_hooks = false
 
-    return objects.count > 1 ? objects : objects[ 0 ]
+    return objects
 
   end
 
@@ -1046,7 +1058,8 @@ module ::Array::Hooked::ArrayInterface
   #  concat_without_hooks  #
   ##########################
 
-  # Alias to :concat that bypasses hooks.
+  ###
+  # Alias to #concat that bypasses hooks.
   #
   # @param [Array<Object>] objects 
   #
@@ -1072,7 +1085,8 @@ module ::Array::Hooked::ArrayInterface
   #  delete_without_hooks  #
   ##########################
 
-  # Alias to :delete that bypasses hooks.
+  ###
+  # Alias to #delete that bypasses hooks.
   #
   # @param [Object] object 
   #
@@ -1098,7 +1112,8 @@ module ::Array::Hooked::ArrayInterface
   #  delete_objects_without_hooks  #
   ##################################
 
-  # Alias to :delete that bypasses hooks and takes multiple objects.
+  ###
+  # Alias to #delete that bypasses hooks and takes multiple objects.
   #
   # @param [Array<Object>] objects 
   #
@@ -1124,7 +1139,8 @@ module ::Array::Hooked::ArrayInterface
   #  delete_at_without_hooks  #
   #############################
 
-  # Alias to :delete_at that bypasses hooks.
+  ###
+  # Alias to #delete_at that bypasses hooks.
   #
   # @param [Integer] index 
   #
@@ -1151,7 +1167,7 @@ module ::Array::Hooked::ArrayInterface
   #####################################
 
   ###
-  # Alias to :delete_at that bypasses hooks and takes multiple indexes.
+  # Alias to #delete_at that bypasses hooks and takes multiple indexes.
   #
   # @param [Array<Integer>] index 
   #
@@ -1178,11 +1194,11 @@ module ::Array::Hooked::ArrayInterface
   #############################
 
   ###
-  # Alias to :delete_if that bypasses hooks.
+  # Alias to #delete_if that bypasses hooks.
   #
   # @yield 
   #
-  #   Block passed to :delete_if.
+  #   Block passed to #delete_if.
   #
   # @return [Object] 
   #
@@ -1205,11 +1221,11 @@ module ::Array::Hooked::ArrayInterface
   ###########################
 
   ###
-  # Alias to :keep_if that bypasses hooks.
+  # Alias to #keep_if that bypasses hooks.
   #
   # @yield 
   #
-  #   Block passed to :keep_if.
+  #   Block passed to #keep_if.
   #
   # @return [Object] 
   #
@@ -1232,7 +1248,7 @@ module ::Array::Hooked::ArrayInterface
   ############################
 
   ###
-  # Alias to :compact that bypasses hooks.
+  # Alias to #compact that bypasses hooks.
   #
   # @return [Object] 
   #
@@ -1255,7 +1271,7 @@ module ::Array::Hooked::ArrayInterface
   ############################
 
   ###
-  # Alias to :flatten that bypasses hooks.
+  # Alias to #flatten that bypasses hooks.
   #
   # @return [Object] 
   #
@@ -1278,11 +1294,11 @@ module ::Array::Hooked::ArrayInterface
   ###########################
 
   ###
-  # Alias to :reject that bypasses hooks.
+  # Alias to #reject that bypasses hooks.
   #
   # @yield 
   #
-  #   Block passed to :keep_if.
+  #   Block passed to #keep_if.
   #
   # @return [Object] 
   #
@@ -1305,7 +1321,7 @@ module ::Array::Hooked::ArrayInterface
   ###########################
 
   ###
-  # Alias to :replace that bypasses hooks.
+  # Alias to #replace that bypasses hooks.
   #
   # @param [Array] other_array 
   #
@@ -1332,7 +1348,7 @@ module ::Array::Hooked::ArrayInterface
   ############################
 
   ###
-  # Alias to :reverse that bypasses hooks.
+  # Alias to #reverse that bypasses hooks.
   #
   # @return [Object] 
   #
@@ -1355,7 +1371,7 @@ module ::Array::Hooked::ArrayInterface
   ###########################
 
   ###
-  # Alias to :rotate that bypasses hooks.
+  # Alias to #rotate that bypasses hooks.
   #
   # @param [Integer] rotate_count 
   #
@@ -1382,11 +1398,11 @@ module ::Array::Hooked::ArrayInterface
   ###########################
 
   ###
-  # Alias to :select that bypasses hooks.
+  # Alias to #select that bypasses hooks.
   #
   # @yield 
   #
-  #   Block passed to :select!.
+  #   Block passed to #select!.
   #
   # @return [Object] 
   #
@@ -1409,11 +1425,11 @@ module ::Array::Hooked::ArrayInterface
   ############################
 
   ###
-  # Alias to :shuffle that bypasses hooks.
+  # Alias to #shuffle that bypasses hooks.
   #
   # @param [Object] random_number_generator 
   #
-  #        Random number generator passed to :shuffle!.
+  #        Random number generator passed to #shuffle!.
   #
   # @return [Object] 
   #
@@ -1437,11 +1453,11 @@ module ::Array::Hooked::ArrayInterface
   ############################
 
   ###
-  # Alias to :select that bypasses hooks.
+  # Alias to #select that bypasses hooks.
   #
   # @yield 
   #
-  #   Block passed to :collect!.
+  #   Block passed to #collect!.
   #
   # @return [Object] 
   #
@@ -1466,11 +1482,11 @@ module ::Array::Hooked::ArrayInterface
   #########################
 
   ###
-  # Alias to :sort that bypasses hooks.
+  # Alias to #sort that bypasses hooks.
   #
   # @yield 
   #
-  #   Block passed to :sort!.
+  #   Block passed to #sort!.
   #
   # @return [Object] 
   #
@@ -1493,11 +1509,11 @@ module ::Array::Hooked::ArrayInterface
   ############################
 
   ###
-  # Alias to :sort_by! that bypasses hooks.
+  # Alias to #sort_by! that bypasses hooks.
   #
   # @yield 
   #
-  #   Block passed to :sort_by!.
+  #   Block passed to #sort_by!.
   #
   # @return [Object] 
   #
@@ -1520,7 +1536,7 @@ module ::Array::Hooked::ArrayInterface
   #########################
 
   ###
-  # Alias to :uniq! that bypasses hooks.
+  # Alias to #uniq! that bypasses hooks.
   #
   # @return [Object] 
   #
@@ -1543,7 +1559,7 @@ module ::Array::Hooked::ArrayInterface
   ###########################
 
   ###
-  # Alias to :unshift that bypasses hooks.
+  # Alias to #unshift that bypasses hooks.
   #
   # @param [Object] object 
   #
@@ -1570,7 +1586,7 @@ module ::Array::Hooked::ArrayInterface
   #######################
 
   ###
-  # Alias to :pop that bypasses hooks.
+  # Alias to #pop that bypasses hooks.
   #
   # @return [Object] 
   #
@@ -1593,7 +1609,7 @@ module ::Array::Hooked::ArrayInterface
   #########################
 
   ###
-  # Alias to :shift that bypasses hooks.
+  # Alias to #shift that bypasses hooks.
   #
   # @return [Object] 
   #
@@ -1616,7 +1632,7 @@ module ::Array::Hooked::ArrayInterface
   ##########################
 
   ###
-  # Alias to :slice! that bypasses hooks.
+  # Alias to #slice! that bypasses hooks.
   #
   # @param [Integer] index_start_or_range 
   #
@@ -1647,7 +1663,7 @@ module ::Array::Hooked::ArrayInterface
   #########################
 
   ###
-  # Alias to :clear that bypasses hooks.
+  # Alias to #clear that bypasses hooks.
   #
   # @return [Object] 
   #
@@ -1673,6 +1689,23 @@ module ::Array::Hooked::ArrayInterface
   #  filter_insert_objects  #
   ###########################
   
+  ###
+  # Filter objects provided by request for insert. Existing filtering
+  #   corrects for inserts beyond the last existing index by adding nils
+  #   to the objects array. Explicit nils make a number of situations easier.
+  #
+  # @param [Integer] index 
+  #
+  #        Index where insert was requested.
+  #
+  # @param [Array<Object>] objects 
+  #
+  #        Objects passed to #insert.
+  #
+  # @return [Integer] 
+  #
+  #         Resulting index from filtered modifications.
+  #
   def filter_insert_objects( index, objects )
     
     # if we have less elements in self than the index we are inserting at
@@ -1693,9 +1726,21 @@ module ::Array::Hooked::ArrayInterface
   #  perform_get_between_hooks  #
   ###############################
   
-  def perform_get_between_hooks( index, *objects )
+  ###
+  # Performs actual retrieval (#[]) of index between calling hooks.
+  #   Separated for overriding in subclasses.
+  #
+  # @param [Integer] index 
+  #
+  #        Index where insert was requested.
+  #
+  # @return [Object]
+  #
+  #         Object at index.
+  #
+  def perform_get_between_hooks( index )
     
-    return undecorated_get( index, *objects )
+    return undecorated_get( index )
     
   end
 
@@ -1703,6 +1748,22 @@ module ::Array::Hooked::ArrayInterface
   #  perform_set_between_hooks  #
   ###############################
   
+  ###
+  # Performs actual set (#[]=) at index between calling hooks.
+  #   Separated for overriding in subclasses.
+  #
+  # @param [Integer] index 
+  #
+  #        Index where insert was requested.
+  #
+  # @param [Object] object 
+  #
+  #        Object to set at index.
+  #
+  # @return [Object]
+  #
+  #         Object at index.
+  #
   def perform_set_between_hooks( index, object )
     
     undecorated_set( index, object )
@@ -1715,6 +1776,24 @@ module ::Array::Hooked::ArrayInterface
   #  perform_insert_between_hooks  #
   ##################################
   
+  ###
+  # Performs actual insert (#insert) at index between calling hooks.
+  #   Separated for overriding in subclasses.
+  #
+  # @overload perform_insert_between_hooks( index, object, ... )
+  #
+  #   @param [Integer] index 
+  #   
+  #          Index where insert was requested.
+  #   
+  #   @param [Object] object 
+  #   
+  #          Object to set at index.
+  #
+  # @return [Object]
+  #
+  #         Object at index.
+  #
   def perform_insert_between_hooks( index, *objects )
     
     first_index = index
@@ -1739,6 +1818,22 @@ module ::Array::Hooked::ArrayInterface
   #  perform_single_object_insert_between_hooks  #
   ################################################
   
+  ###
+  # Performs actual insert (#insert) of single object at index between calling hooks.
+  #   Separated for overriding in subclasses.
+  #
+  # @param [Integer] index 
+  # 
+  #        Index where insert was requested.
+  # 
+  # @param [Object] object 
+  # 
+  #        Object to set at index.
+  #
+  # @return [Integer]
+  #
+  #         Index where insert occurred.
+  #
   def perform_single_object_insert_between_hooks( index, object )
     
     undecorated_insert( index, object )
@@ -1751,7 +1846,19 @@ module ::Array::Hooked::ArrayInterface
   #  perform_delete_at_between_hooks  #
   #####################################
   
-  def perform_delete_at_between_hooks( index, *objects )
+  ###
+  # Performs actual delete (#delete_at) at index between calling hooks.
+  #   Separated for overriding in subclasses.
+  #
+  # @param [Integer] index 
+  #
+  #        Index where insert was requested.
+  #
+  # @return [Object]
+  #
+  #         Object deleted at index.
+  #
+  def perform_delete_at_between_hooks( index )
 
     return undecorated_delete_at( index )
     
