@@ -1,9 +1,9 @@
 
 require_relative '../../lib/array-hooked.rb'
 
-################
-#  initialize  #
-################
+###################
+#  Array::Hooked  #
+###################
 
 describe ::Array::Hooked do
   
@@ -65,20 +65,49 @@ describe ::Array::Hooked do
     hooked_array.should == [ :default, :default, :default, :default ]
   end
   
+  ########
+  #  []  #
+  ########
+
+  it 'can create a new instance using [ *members ]' do
+    hooked_array = ::Array::Hooked[ :default, :default, :default, :default ]
+    hooked_array.is_a?( ::Array ).should == true
+    hooked_array.should == [ :default, :default, :default, :default ]
+  end
+  
 end
 
-######################################
-#  self.class::WithoutInternalArray  #
-######################################
+#########################################
+#  Array::Hooked::WithoutInternalArray  #
+#########################################
 
-describe ::Array::Hooked do
+describe ::Array::Hooked::WithoutInternalArray do
+
+  #########
+  #  new  #
+  #########
 
   it 'should have a subclass self.class::WithoutInternalArray for internal duplication, which initialize without creating the internal array' do
     array_without_internal_array = ::Array::Hooked::WithoutInternalArray.new
     array_without_internal_array.internal_array.should == nil
   end
+  
+  ###################################
+  #  new( configuration_instance )  #
+  ###################################
+  
+  it 'should have a subclass self.class::WithoutInternalArray for internal duplication, which initialize without creating the internal array' do
+    configuration_instance = ::Object.new
+    array_without_internal_array = ::Array::Hooked::WithoutInternalArray.new( configuration_instance )
+    array_without_internal_array.internal_array.should == nil
+    array_without_internal_array.configuration_instance.should == configuration_instance
+  end
     
 end
+
+######################
+#  <#Array::Hooked>  #
+######################
 
 describe ::Array::Hooked do
 
@@ -91,7 +120,6 @@ describe ::Array::Hooked do
     hooked_array += [ :A ]
     hooked_array.should == [ :A ]
   end
-
 
   #######
   #  -  #
@@ -142,16 +170,10 @@ describe ::Array::Hooked do
   ##############
 
   it 'can replace by collect/map' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.collect! { :C }
     hooked_array.should == [ :C, :C, :C ]
-
     hooked_array.collect!.is_a?( Enumerator ).should == true
-
   end
 
   ##########
@@ -171,14 +193,9 @@ describe ::Array::Hooked do
   ##############
 
   it 'can compact' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, nil, :B, nil, :C, nil )
-    hooked_array.should == [ :A, nil, :B, nil, :C, nil ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, nil, :B, nil, :C, nil ] )
     hooked_array.compact!
     hooked_array.should == [ :A, :B, :C ]
-
   end
 
   #############
@@ -238,14 +255,9 @@ describe ::Array::Hooked do
   ##############
 
   it 'can flatten' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, [ :F_A, :F_B ], :B, [ :F_C ], :C, [ :F_D ], [ :F_E ] )
-    hooked_array.should == [ :A, [ :F_A, :F_B ], :B, [ :F_C ], :C, [ :F_D ], [ :F_E ] ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, [ :F_A, :F_B ], :B, [ :F_C ], :C, [ :F_D ], [ :F_E ] ] )
     hooked_array.flatten!
     hooked_array.should == [ :A, :F_A, :F_B, :B, :F_C, :C, :F_D, :F_E ]
-
   end
 
   #############
@@ -305,16 +317,11 @@ describe ::Array::Hooked do
   #############
 
   it 'can reject' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.reject! do |object|
       object != :C
     end
     hooked_array.should == [ :C ]
-
   end
 
   ############
@@ -334,14 +341,9 @@ describe ::Array::Hooked do
   ##############
 
   it 'can reverse self' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.reverse!
     hooked_array.should == [ :C, :B, :A ]
-
   end
 
   #############
@@ -361,18 +363,11 @@ describe ::Array::Hooked do
   #############
 
   it 'can rotate self' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
-
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.rotate!
     hooked_array.should == [ :B, :C, :A ]
-
     hooked_array.rotate!( -1 )
     hooked_array.should == [ :A, :B, :C ]
-
   end
 
   ############
@@ -388,18 +383,12 @@ describe ::Array::Hooked do
   #############
 
   it 'can keep by select' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.select! do |object|
       object == :C
     end
     hooked_array.should == [ :C ]
-
     hooked_array.select!.is_a?( Enumerator ).should == true
-
   end
 
   ############
@@ -411,12 +400,7 @@ describe ::Array::Hooked do
   ##############
 
   it 'can shuffle self' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
-
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     prior_version = hooked_array.dup
     attempts = [ ]
     50.times do
@@ -427,7 +411,6 @@ describe ::Array::Hooked do
     attempts_correct = attempts.select { |member| member == false }.count
     ( attempts_correct >= 10 ).should == true
     first_shuffle_version = hooked_array
-
   end
 
   #############
@@ -460,12 +443,8 @@ describe ::Array::Hooked do
   #  sort!  #
   ###########
 
-  it 'can replace by collect/map' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
+  it 'can sort' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.sort! do |a, b|
       if a < b
         1
@@ -476,10 +455,8 @@ describe ::Array::Hooked do
       end
     end
     hooked_array.should == [ :C, :B, :A ]
-
     hooked_array.sort!
     hooked_array.should == [ :A, :B, :C ]
-
   end
 
   ##########
@@ -491,11 +468,7 @@ describe ::Array::Hooked do
   ##############
 
   it 'can replace by collect/map' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.sort_by! do |object|
       case object
       when :A
@@ -507,9 +480,7 @@ describe ::Array::Hooked do
       end
     end
     hooked_array.should == [ :B, :A, :C ]
-
     hooked_array.sort_by!.is_a?( Enumerator ).should == true
-
   end
 
   ##########
@@ -541,14 +512,9 @@ describe ::Array::Hooked do
   ###########
 
   it 'can remove non-unique elements' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C, :C, :C, :B, :A )
-    hooked_array.should == [ :A, :B, :C, :C, :C, :B, :A ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C, :C, :C, :B, :A ] )
     hooked_array.uniq!
     hooked_array.should == [ :A, :B, :C ]
-
   end
 
   ##########
@@ -576,18 +542,13 @@ describe ::Array::Hooked do
   #########
 
   it 'can store elements' do
-  
     hooked_array = ::Array::Hooked.new
-
     hooked_array[ 0 ] = :A
     hooked_array.should == [ :A ]
-
     hooked_array[ 1 ] = :B
     hooked_array.should == [ :A, :B ]
-
     hooked_array[ 0 ] = :D
     hooked_array.should == [ :D, :B ]
-
   end
 
   ################
@@ -599,18 +560,13 @@ describe ::Array::Hooked do
   ############
 
   it 'can insert elements' do
-  
     hooked_array = ::Array::Hooked.new
-
     hooked_array.insert( 3, :D )
     hooked_array.should == [ nil, nil, nil, :D ]
-
     hooked_array.insert( 1, :B )
     hooked_array.should == [ nil, :B, nil, nil, :D ]
-
     hooked_array.insert( 2, :C )
     hooked_array.should == [ nil, :B, :C, nil, nil, :D ]
-
   end
 
   ###################
@@ -636,18 +592,9 @@ describe ::Array::Hooked do
   ############
   
   it 'can delete elements' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A )
-    hooked_array.should == [ :A ]
-
+    hooked_array = ::Array::Hooked.new( nil, [ :A ] )
     hooked_array.delete( :A )
     hooked_array.should == [ ]
-
-    hooked_array.push( :B )
-    hooked_array.should == [ :B ]
-
   end
 
   ###################
@@ -669,18 +616,9 @@ describe ::Array::Hooked do
   ###############
 
   it 'can delete by indexes' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A )
-    hooked_array.should == [ :A ]
-    
+    hooked_array = ::Array::Hooked.new( nil, [ :A ] )    
     hooked_array.delete_at( 0 )
     hooked_array.should == [ ]
-
-    hooked_array.push( :B )
-    hooked_array.should == [ :B ]
-
   end
 
   #######################
@@ -688,15 +626,9 @@ describe ::Array::Hooked do
   #######################
 
   it 'can delete by indexes' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
-
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.delete_at_indexes( 0, 1 )
     hooked_array.should == [ :C ]
-
   end
 
   ###############
@@ -704,18 +636,12 @@ describe ::Array::Hooked do
   ###############
 
   it 'can delete by block' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.delete_if do |object|
       object != :C
     end
     hooked_array.should == [ :C ]
-
     hooked_array.delete_if.is_a?( Enumerator ).should == true
-
   end
 
   #############
@@ -723,16 +649,11 @@ describe ::Array::Hooked do
   #############
 
   it 'can keep by block' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.keep_if do |object|
       object == :C
     end
     hooked_array.should == [ :C ]
-
   end
 
   #############
@@ -740,11 +661,7 @@ describe ::Array::Hooked do
   #############
 
   it 'can replace self' do
-
-    hooked_array = ::Array::Hooked.new
-
-    hooked_array.push( :A, :B, :C )
-    hooked_array.should == [ :A, :B, :C ]
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.replace( [ :D, :E, :F ] )
     hooked_array.should == [ :D, :E, :F ]
 
@@ -796,21 +713,14 @@ describe ::Array::Hooked do
   ##################
 
   it 'has a hook that is called before setting a value; return value is used in place of object' do
-    
     class ::Array::Hooked::SubMockPreSet < ::Array::Hooked
-      
       def pre_set_hook( index, object, is_insert = false )
         return :some_other_value
       end
-      
     end
-    
     hooked_array = ::Array::Hooked::SubMockPreSet.new
-
     hooked_array.push( :some_value )
-    
     hooked_array.should == [ :some_other_value ]
-    
   end
 
   ###################
@@ -818,21 +728,14 @@ describe ::Array::Hooked do
   ###################
 
   it 'has a hook that is called after setting a value' do
-
     class ::Array::Hooked::SubMockPostSet < ::Array::Hooked
-      
       def post_set_hook( index, object, is_insert = false )
         return :some_other_value
       end
-      
     end
-    
     hooked_array = ::Array::Hooked::SubMockPostSet.new
-
     hooked_array.push( :some_value ).should == [ :some_other_value ]
-    
     hooked_array.should == [ :some_value ]
-    
   end
 
   ##################
@@ -840,22 +743,15 @@ describe ::Array::Hooked do
   ##################
 
   it 'has a hook that is called before getting a value; if return value is false, get does not occur' do
-    
     class ::Array::Hooked::SubMockPreGet < ::Array::Hooked
-      
       def pre_get_hook( index )
         return false
       end
-      
     end
-    
     hooked_array = ::Array::Hooked::SubMockPreGet.new
-    
     hooked_array.push( :some_value )
     hooked_array[ 0 ].should == nil
-    
     hooked_array.should == [ :some_value ]
-    
   end
 
   ###################
@@ -863,22 +759,15 @@ describe ::Array::Hooked do
   ###################
 
   it 'has a hook that is called after getting a value' do
-
     class ::Array::Hooked::SubMockPostGet < ::Array::Hooked
-      
       def post_get_hook( index, object )
         return :some_other_value
       end
-      
     end
-    
     hooked_array = ::Array::Hooked::SubMockPostGet.new
-    
     hooked_array.push( :some_value )
     hooked_array[ 0 ].should == :some_other_value
-    
     hooked_array.should == [ :some_value ]
-    
   end
 
   #####################
@@ -886,22 +775,15 @@ describe ::Array::Hooked do
   #####################
 
   it 'has a hook that is called before deleting an index; if return value is false, delete does not occur' do
-    
     class ::Array::Hooked::SubMockPreDelete < ::Array::Hooked
-      
       def pre_delete_hook( index )
         return false
       end
-      
     end
-    
     hooked_array = ::Array::Hooked::SubMockPreDelete.new
-    
     hooked_array.push( :some_value )
     hooked_array.delete_at( 0 )
-    
     hooked_array.should == [ :some_value ]
-    
   end
 
   ######################
@@ -909,22 +791,15 @@ describe ::Array::Hooked do
   ######################
 
   it 'has a hook that is called after deleting an index' do
-    
     class ::Array::Hooked::SubMockPostDelete < ::Array::Hooked
-      
       def post_delete_hook( index, object )
         return :some_other_value
       end
-      
     end
-    
     hooked_array = ::Array::Hooked::SubMockPostDelete.new
-    
     hooked_array.push( :some_value )
     hooked_array.delete_at( 0 ).should == :some_other_value
-    
     hooked_array.should == [ ]
-    
   end
   
 end

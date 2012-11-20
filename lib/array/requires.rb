@@ -3,6 +3,8 @@ basepath = 'hooked'
 
 files = [
   
+  'array_interface/class_instance',
+  'array_interface/array_methods',
   'array_interface/hooks',
   'array_interface/undecorated',
   'array_interface/without_hooks',
