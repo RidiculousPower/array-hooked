@@ -8,7 +8,7 @@ require_relative './namespaces'
 # source file requires
 require_relative './requires.rb'
 
-class ::Array::Hooked < ::Array
+class ::Array::Hooked
 
   include ::Array::Hooked::ArrayInterface
   

@@ -1,3 +1,5 @@
 
-class ::Array::Hooked < ::Array
+class ::Array::Hooked
+  module ArrayInterface
+  end
 end

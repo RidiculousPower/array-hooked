@@ -3,128 +3,24 @@ module ::Array::Hooked::ArrayInterface
   
   include ::IdentifiesAs
   
-  instances_identify_as!( ::Array::Hooked )
+  instances_identify_as!( ::Array, 
+                          ::Array::Hooked )
+  
+  include ::Array::Hooked::ArrayInterface::Undecorated
+  include ::Array::Hooked::ArrayInterface::Hooks
+  include ::Array::Hooked::ArrayInterface::WithoutHooks
+  
+  include ::Enumerable
   
   extend ::Module::Cluster
-
-  #####################
-  #  undecorated_set  #
-  #####################
-
-  ###
-  # Alias to original #[]= method. Used to perform actual set between hooks.
-  #
-  # @param [Integer] index
-  # 
-  #        Index at which set is taking place.
-  #
-  # @param [Object] object 
-  #
-  #        Element being set.
-  #
-  # @return [Object] 
-  #
-  #         Element set.
-  #
-  cluster( :undecorated_set ).before_include.cascade_to( :class ) do |hooked_instance|
-    
-    hooked_instance.class_eval do
-      
-      unless method_defined?( :undecorated_set )
-        alias_method :undecorated_set, :[]=
-      end
-    
-    end
   
-  end
-  
-  #####################
-  #  undecorated_get  #
-  #####################
-
-  ###
-  # Alias to original #[] method. Used to perform actual get between hooks.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which get is requested.
-  #
-  # @return [Object] 
-  #
-  #         Element requested.
-  #
-  cluster( :undecorated_get ).before_include.cascade_to( :class ) do |hooked_instance|
-    
-    hooked_instance.class_eval do
-      
-      unless method_defined?( :undecorated_get )
-        alias_method :undecorated_get, :[]
-      end
-      
+  cluster( :hooked_array ).before_include.cascade_to( :class ) do |hooked_instance|
+    hooked_instance_subclass = ::Class.new( hooked_instance ) do
+      include ::Array::Hooked::ArrayInterface::WithoutInternalArray
     end
-    
+    hooked_instance.const_set( :WithoutInternalArray, hooked_instance_subclass )
   end
 
-  ########################
-  #  undecorated_insert  #
-  ########################
-
-  ###
-  # Alias to original #insert method. Used to perform actual insert between hooks.
-  #
-  # @overload undecorated_insert( index, object, ... )
-  #
-  #   @param [Integer] index 
-  #   
-  #          Index at which insert is taking place.
-  #   
-  #   @param [Object] object
-  #   
-  #          Elements being inserted.
-  #
-  # @return [Object] 
-  #
-  #         Elements inserted.
-  #
-  cluster( :undecorated_insert ).before_include.cascade_to( :class ) do |hooked_instance|
-    
-    hooked_instance.class_eval do
-      
-      unless method_defined?( :undecorated_insert )
-        alias_method :undecorated_insert, :insert
-      end
-      
-    end
-    
-  end
-
-  ###########################
-  #  undecorated_delete_at  #
-  ###########################
-
-  ###
-  # Alias to original #delete method. Used to perform actual delete between hooks.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which delete is taking place.
-  #
-  # @return [Object] 
-  #
-  #         Element deleted.
-  #
-  cluster( :undecorated_delete_at ).before_include.cascade_to( :class ) do |hooked_instance|
-    
-    hooked_instance.class_eval do
-            
-      unless method_defined?( :undecorated_delete_at )
-        alias_method :undecorated_delete_at, :delete_at
-      end
-      
-    end
-    
-  end
-  
   ################
   #  initialize  #
   ################
@@ -142,17 +38,66 @@ module ::Array::Hooked::ArrayInterface
   #   
   #          Parameters passed through super to Array#initialize.
   #
-  # @return [true,false] 
-  #
-  #         Whether receiver identifies as object.
-  #
-  def initialize( configuration_instance = nil, *array_initialization_args )
+  def initialize( configuration_instance = nil, *array_initialization_args, & block )
     
     @configuration_instance = configuration_instance
+        
+    initialize_internal_array( *array_initialization_args, & block )
+    
+  end
 
-    super( *array_initialization_args )
+  ###############################
+  #  initialize_internal_array  #
+  ###############################
+  
+  def initialize_internal_array( *array_initialization_args, & block )
+
+    @internal_array = ::Array.new( *array_initialization_args, & block )
+    
+  end
+
+  ######################
+  #  initialize_clone  #
+  ######################
+  
+  def initialize_clone( hooked_array_clone )
+    
+    super
+    
+    hooked_array_clone.internal_array = hooked_array_clone.internal_array.clone
         
   end
+
+  ####################
+  #  initialize_dup  #
+  ####################
+  
+  def initialize_dup( hooked_array_dup )
+    
+    super
+    
+    hooked_array_dup.internal_array = hooked_array_dup.internal_array.dup
+
+  end
+
+  ####################
+  #  internal_array  #
+  ####################
+  
+  ###
+  # @!attribute [rw]
+  #
+  # @return [Array]
+  #
+  #         Internal Array instance used to hold state.
+  #
+  #         An internal Array instance is necessary to support lazy-loading of elements
+  #         when a splat is called (*array), as the CRuby internals check if instance
+  #         is already an Array instance prior to calling #to_a for conversion. If instance 
+  #         is already an Array instance then #to_a will not be called, which causes 
+  #         lazy-loading elements not to be loaded (resulting in nil in their place).
+  #
+  attr_accessor :internal_array
   
   ############################
   #  configuration_instance  #
@@ -165,164 +110,725 @@ module ::Array::Hooked::ArrayInterface
   #
   #         Object that instance is attached to; primarily useful for reference from hooks.
   #
-  attr_accessor :configuration_instance
+  attr_accessor :configuration_instance  
+
+  #######
+  #  +  #
+  #######
+
+  ####
+  #
+  # NOTE: this breaks + by causing it to modify the array like +=.
+  # The alternative (+ breaking the array) was worse.
+  #
+  def +( array )
+
+    return dup.push( *array )
+
+  end
   
-  ################################################  Subclass Hooks  ####################################################
+  #######
+  #  -  #
+  #######
+
+  def -( array )
+    
+    result_array = dup
+    result_array.delete_objects( *array )
+
+    return result_array
+
+  end
+
+  #######
+  #  *  #
+  #######
   
-  ##################
-  #  pre_set_hook  #
-  ##################
+  def *( other_array )
 
-  ###
-  # A hook that is called before setting a value; return value is used in place of object.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which set/insert is taking place.
-  #
-  # @param [Object] object 
-  #
-  #        Element being set/inserted.
-  #
-  # @param [true,false] is_insert 
-  #
-  #        Whether this set is inserting a new index.
-  #
-  # @return [Object] 
-  #
-  #         Return value is used in place of object.
-  #
-  def pre_set_hook( index, object, is_insert = false )
-
-    return object
+    result_array = dup
+    result_array.internal_array *= other_array
+    
+    return result_array
     
   end
 
-  ###################
-  #  post_set_hook  #
-  ###################
-
-  ###
-  # A hook that is called after setting a value.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which set/insert is taking place.
-  #
-  # @param [Object] object 
-  #
-  #        Element being set/inserted.
-  #
-  # @param [true,false] is_insert 
-  #
-  #        Whether this set is inserting a new index.
-  #
-  # @return [Object] 
-  #
-  #         Ignored.
-  #
-  def post_set_hook( index, object, is_insert = false )
+  #######
+  #  &  #
+  #######
+  
+  def &( other_array )
     
-    return object
+    result_array = dup
+    result_array.internal_array &= other_array
+    
+    return result_array
     
   end
 
-  ##################
-  #  pre_get_hook  #
-  ##################
-
-  ###
-  # A hook that is called before getting a value; if return value is false, get does not occur.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which set/insert is taking place.
-  #
-  # @return [true,false] 
-  #
-  #         If return value is false, get does not occur.
-  #
-  def pre_get_hook( index )
+  #######
+  #  |  #
+  #######
+  
+  def |( other_array )
     
-    # false means get does not take place
-    return true
+    result_array = dup
+    result_array.internal_array |= other_array
+    
+    return result_array
     
   end
 
-  ###################
-  #  post_get_hook  #
-  ###################
+  ########
+  #  ==  #
+  ########
+  
+  def ==( other_array )
+    
+    return @internal_array == other_array
 
-  ###
-  # A hook that is called after getting a value.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which get is taking place.
-  #
-  # @param [Object] object 
-  #
-  #        Element retrieved.
-  #
-  # @return [Object] 
-  #
-  #         Object returned in place of get result.
-  #
-  def post_get_hook( index, object )
-    
-    return object
-    
   end
 
-  #####################
-  #  pre_delete_hook  #
-  #####################
-
-  ###
-  # A hook that is called before deleting a value; if return value is false, delete does not occur.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which delete is taking place.
-  #
-  # @return [true,false] 
-  #
-  #         If return value is false, delete does not occur.
-  #
-  def pre_delete_hook( index )
+  #########
+  #  <=>  #
+  #########
+  
+  def <=>( other_array )
     
-    # false means delete does not take place
-    return true
-    
-  end
-
-  ######################
-  #  post_delete_hook  #
-  ######################
-
-  ###
-  # A hook that is called after deleting a value.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which delete took place.
-  #
-  # @param [Object] object 
-  #
-  #        Element deleted.
-  #
-  # @return [Object] 
-  #
-  #         Object returned in place of delete result.
-  #
-  def post_delete_hook( index, object )
-    
-    return object
+    return @internal_array <=> other_array
     
   end
   
-  #####################################  Self Management  ##########################################
+  ########
+  #  <<  #
+  ########
   
+  def <<( object )
+
+    return insert( length, object )
+
+  end
+
+  ###########
+  #  assoc  #
+  ###########
+  
+  def assoc( object )
+
+    return @internal_array.assoc( object )
+
+  end
+
+  #############
+  #  collect  #
+  #############
+  
+  def collect
+
+    return dup.collect!
+
+  end
+
+  #################
+  #  combination  #
+  #################
+  
+  def combination( number, & block )
+    
+    return_value = self
+    
+    if block_given?
+      @internal_array.combination( & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+
+  end
+
+  #############
+  #  compact  #
+  #############
+  
+  def compact
+    
+    return dup.compact!
+    
+  end
+
+  ###########
+  #  count  #
+  ###########
+  
+  def count( object = nil, & block )
+    
+    return @internal_array.count( object, & block )
+    
+  end
+
+  ###########
+  #  cycle  #
+  ###########
+  
+  def cycle( number, & block )
+    
+    return_value = self
+    
+    if block_given?
+      @internal_array.cycle( number, & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+    
+  end
+
+  ##########
+  #  drop  #
+  ##########
+  
+  def drop( number )
+    
+    result_array = dup
+    result_array.internal_array.drop( number )
+    
+    return result_array
+    
+  end
+
+  ################
+  #  drop_while  #
+  ################
+  
+  def drop_while( & block )
+
+    return_value = self
+    
+    if block_given?
+      @internal_array.drop_while( & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+
+  end
+
+  ##########
+  #  each  #
+  ##########
+  
+  def each( & block )
+
+    return_value = self
+    
+    if block_given?
+      @internal_array.each( & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+
+  end
+
+  ################
+  #  each_index  #
+  ################
+  
+  def each_index
+
+    return_value = self
+    
+    if block_given?
+      @internal_array.each_index( & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+
+  end
+
+  ############
+  #  empty?  #
+  ############
+  
+  def empty?
+    
+    return @internal_array.empty?
+    
+  end
+
+  ###########
+  #  fetch  #
+  ###########
+  
+  def fetch( index, default = nil, & block )
+    
+    return @internal_array.fetch( index, default, & block )
+    
+  end
+
+  ##########
+  #  fill  #
+  ##########
+  
+  def fill( *args, & block )
+    
+    @internal_array.fill( *args, & block )
+    
+    return self
+    
+  end
+
+  ################
+  #  find_index  #
+  ################
+  
+  def find_index( object = nil, & block )
+    
+    return @internal_array.find_index( object, & block )
+    
+  end
+
+  ###########
+  #  index  #
+  ###########
+  
+  alias_method :index, :find_index
+
+  ###########
+  #  first  #
+  ###########
+  
+  def first
+    
+    return self[ 0 ]
+    
+  end
+
+  #############
+  #  flatten  #
+  #############
+  
+  def flatten
+    
+    return dup.flatten!
+    
+  end
+
+  ############
+  #  freeze  #
+  ############
+  
+  def freeze
+    
+    @internal_array.freeze
+    
+    return self
+    
+  end
+
+  ##########
+  #  hash  #
+  ##########
+  
+  def hash
+    
+    return @internal_array.hash
+    
+  end
+
+  ##############
+  #  include?  #
+  ##############
+  
+  def include?( object )
+    
+    return @internal_array.include?( object )
+    
+  end
+
+  #############
+  #  inspect  #
+  #############
+  
+  def inspect
+    
+    return to_s
+    
+  end
+
+  ##########
+  #  join  #
+  ##########
+  
+  def join( separator = $, )
+    
+    return @internal_array.join( separator )
+    
+  end
+
+  ##########
+  #  last  #
+  ##########
+  
+  def last
+    
+    return self[ -1 ]
+    
+  end
+
+  ############
+  #  length  #
+  ############
+  
+  def length
+    
+    return @internal_array.length
+    
+  end
+
+  #########
+  #  map  #
+  #########
+  
+  alias_method :map, :collect
+
+  ##########
+  #  pack  #
+  ##########
+  
+  def pack( template_string )
+    
+    return @internal_array.pack( template_string )
+    
+  end
+
+  #################
+  #  permutation  #
+  #################
+  
+  def permutation( number = nil, & block )
+    
+    return_value = self
+    
+    if block_given?
+      @internal_array.permutation( number, & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+
+  end
+
+  #############
+  #  product  #
+  #############
+  
+  def product( *other_arrays, & block )
+    
+    return @internal_array.product( * other_arrays, & block )
+    
+  end
+
+  ############
+  #  rassoc  #
+  ############
+  
+  def rassoc( object )
+    
+    return @internal_array.rassoc( object )
+    
+  end
+
+  ############
+  #  reject  #
+  ############
+  
+  def reject( & block )
+    
+    return dup.reject!( & block )
+    
+  end
+
+  ##########################
+  #  repeated_combination  #
+  ##########################
+  
+  def repeated_combination( number, & block )
+
+    return_value = self
+    
+    if block_given?
+      @internal_array.repeated_combination( number, & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+
+  end
+
+  ##########################
+  #  repeated_permutation  #
+  ##########################
+  
+  def repeated_permutation( number, & block )
+
+    return_value = self
+    
+    if block_given?
+      @internal_array.repeated_permutation( number, & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+
+  end
+
+  #############
+  #  reverse  #
+  #############
+  
+  def reverse
+
+    return dup.reverse!
+
+  end
+
+  ##################
+  #  reverse_each  #
+  ##################
+  
+  def reverse_each
+    
+    return_value = self
+    
+    if block_given?
+      @internal_array.reverse_each( & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+    
+  end
+
+  ############
+  #  rindex  #
+  ############
+  
+  def rindex( object = nil, & block )
+
+    return_value = self
+    
+    if block_given?
+      @internal_array.rindex( object, & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+
+  end
+
+  ############
+  #  rotate  #
+  ############
+  
+  def rotate( count = 1 )
+    
+    return dup.rotate!( count )
+    
+  end
+
+  ############
+  #  sample  #
+  ############
+  
+  def sample( *args )
+    
+    return @internal_array.sample( *args )
+    
+  end
+
+  ############
+  #  select  #
+  ############
+  
+  def select
+    
+    return dup.select!
+    
+  end
+
+  #############
+  #  shuffle  #
+  #############
+  
+  def shuffle( random_number_generator = nil )
+    
+    return dup.shuffle!( random_number_generator )
+    
+  end
+
+  ############
+  #  length  #
+  ############
+  
+  def length
+    
+    return @internal_array.length
+    
+  end
+
+  ##########
+  #  size  #
+  ##########
+  
+  alias_method :size, :length
+
+  ###########
+  #  slice  #
+  ###########
+  
+  def slice( *args )
+    
+    return dup.slice!( *args )
+    
+  end
+
+  ##########
+  #  sort  #
+  ##########
+  
+  def sort( & block )
+    
+    return dup.sort!( & block )
+    
+  end
+
+  ##########
+  #  take  #
+  ##########
+  
+  def take( number )
+    
+    return slice( 0, number - 1 )
+    
+  end
+
+  ################
+  #  take_while  #
+  ################
+  
+  def take_while( & block )
+    
+    return_value = self
+    
+    if block_given?
+      @internal_array.take_while( & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
+    
+  end
+
+  ##########
+  #  to_a  #
+  ##########
+  
+  def to_a
+    
+    return self
+    
+  end
+
+  ############
+  #  to_ary  #
+  ############
+  
+  def to_ary
+    
+    return self
+    
+  end
+
+  ##########
+  #  to_s  #
+  ##########
+  
+  def to_s
+    
+    return @internal_array.to_s
+    
+  end
+
+  ###############
+  #  transpose  #
+  ###############
+  
+  def transpose
+    
+    result_array = dup
+    result_array.internal_array.transpose( other_array )
+    
+    return result_array
+    
+  end
+
+  ##########
+  #  uniq  #
+  ##########
+  
+  def uniq( & block )
+    
+    return dup.uniq!( & block )
+    
+  end
+
+  ###############
+  #  values_at  #
+  ###############
+  
+  def values_at( *selectors )
+    
+    result_array = self.class.new
+    values = @internal_array.values_at( *selectors )
+    result_array.internal_array = values
+    
+    return result_array
+    
+  end
+
+  #########
+  #  zip  #
+  #########
+  
+  def zip( *args, & block )
+    
+    return_value = nil
+    
+    if block_given?
+    else
+      result_array = self.class.new
+      zipped_internal_array = @internal_array.zip( *args )
+      result_array.internal_array = zipped_internal_array
+      return_value = result_array
+    end
+    
+    return return_value    
+    
+  end
+
   ########
   #  []  #
   ########
@@ -351,10 +857,15 @@ module ::Array::Hooked::ArrayInterface
     
   end
 
-  ################
-  #  []=         #
-  #  hooked_set  #
-  ################
+  ########
+  #  at  #
+  ########
+  
+  alias_method( :at, :[] )
+
+  #########
+  #  []=  #
+  #########
 
   def []=( index, object )
 
@@ -371,13 +882,16 @@ module ::Array::Hooked::ArrayInterface
     return object
 
   end
+
+  ################
+  #  hooked_set  #
+  ################
   
   alias_method :hooked_set, :[]=
   
-  ###################
-  #  insert         #
-  #  hooked_insert  #
-  ###################
+  ############
+  #  insert  #
+  ############
 
   def insert( index, *objects )
 
@@ -397,10 +911,14 @@ module ::Array::Hooked::ArrayInterface
         objects[ this_index ] = post_set_hook( index + this_index, this_object, true )
       end
     end
-        
+
     return objects
 
   end
+  
+  ###################
+  #  hooked_insert  #
+  ###################
   
   alias_method :hooked_insert, :insert
   
@@ -409,33 +927,28 @@ module ::Array::Hooked::ArrayInterface
   ##########
 
   def push( *objects )
-
-    return insert( count, *objects )
-
+    
+    return insert( length, *objects )
+    
   end
-  
-  alias_method :<<, :push
 
   ############
   #  concat  #
   ############
 
   def concat( *arrays )
-
+    
     arrays.each do |this_array|
       push( *this_array )
     end
 
     return self
-
+    
   end
-  
-  alias_method :+, :concat
 
-  ###################
-  #  delete         #
-  #  hooked_delete  #
-  ###################
+  ############
+  #  delete  #
+  ############
 
   def delete( object )
 
@@ -448,6 +961,10 @@ module ::Array::Hooked::ArrayInterface
     return return_value
 
   end
+
+  ###################
+  #  hooked_delete  #
+  ###################
   
   alias_method :hooked_delete, :delete
 
@@ -483,20 +1000,6 @@ module ::Array::Hooked::ArrayInterface
     end
 
     return return_value
-
-  end
-
-  #######
-  #  -  #
-  #######
-
-  def -( *arrays )
-
-    arrays.each do |this_array|
-      delete_objects( *this_array )
-    end
-
-    return self
 
   end
 
@@ -696,9 +1199,7 @@ module ::Array::Hooked::ArrayInterface
 
   def reverse!
 
-    reversed_array = reverse
-
-    replace( reversed_array )
+    @internal_array.reverse!
 
     return self
 
@@ -710,13 +1211,7 @@ module ::Array::Hooked::ArrayInterface
 
   def rotate!( rotate_count = 1 )
 
-    reversed_array = rotate( rotate_count )
-
-    clear
-
-    reversed_array.each_with_index do |this_object, index|
-      self[ index ] = this_object
-    end
+    @internal_array.rotate!( rotate_count )
 
     return self
 
@@ -749,13 +1244,7 @@ module ::Array::Hooked::ArrayInterface
 
   def shuffle!( random_number_generator = nil )
 
-    shuffled_array = shuffle( random: random_number_generator )
-
-    clear
-
-    shuffled_array.each_with_index do |this_object, index|
-      self[ index ] = this_object
-    end
+    @internal_array.shuffle!( random: random_number_generator )
 
     return self
 
@@ -763,7 +1252,6 @@ module ::Array::Hooked::ArrayInterface
 
   ##############
   #  collect!  #
-  #  map!      #
   ##############
 
   def collect!
@@ -778,6 +1266,10 @@ module ::Array::Hooked::ArrayInterface
     return self
 
   end
+
+  ##########
+  #  map!  #
+  ##########
   
   alias_method :map!, :collect!
 
@@ -787,13 +1279,7 @@ module ::Array::Hooked::ArrayInterface
 
   def sort!( & block )
 
-    sorted_array = sort( & block )
-
-    unless sorted_array == self
-
-      replace( sorted_array )
-
-    end
+    @internal_array.sort!( & block )
 
     return self
 
@@ -810,9 +1296,7 @@ module ::Array::Hooked::ArrayInterface
     sorted_array = sort_by( & block )
 
     unless sorted_array == self
-
       replace( sorted_array )
-
     end
 
     return self
@@ -825,19 +1309,9 @@ module ::Array::Hooked::ArrayInterface
 
   def uniq!
 
-    return_value = nil
+    @internal_array.uniq!
 
-    uniq_array = uniq
-
-    unless self == uniq_array
-
-      clear
-      
-      replace( uniq_array )
-
-    end
-
-    return return_value
+    return self
 
   end
 
@@ -931,755 +1405,7 @@ module ::Array::Hooked::ArrayInterface
 
     return self
 
-  end
-
-  ################################################  Without Hooks  #####################################################
-  
-  #######################
-  #  get_without_hooks  #
-  #######################
-
-  # Alias to #[] that bypasses hooks.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which set is taking place.
-  #
-  # @return [Object] 
-  #
-  #         Element returned.
-  #
-  def get_without_hooks( index )
-    
-    @without_hooks = true
-
-    self[ index ] = object
-    
-    @without_hooks = false
-    
-    return object
-    
-  end
-
-  #######################
-  #  set_without_hooks  #
-  #######################
-
-  ###
-  # Alias to #[]= that bypasses hooks.
-  #
-  # @param [Integer] index 
-  #
-  #        Index at which set is taking place.
-  #
-  # @param [Object] object 
-  #
-  #        Element being set.
-  #
-  # @return [Object] 
-  #
-  #         Element returned.
-  #
-  def set_without_hooks( index, object )
-    
-    @without_hooks = true
-
-    self[ index ] = object
-    
-    @without_hooks = false
-    
-    return object
-    
-  end
-
-  ##########################
-  #  insert_without_hooks  #
-  ##########################
-
-  ###
-  # Alias to #insert that bypasses hooks.
-  #
-  # @overload insert_without_hooks( index, object, ... )
-  #
-  #   @param [Integer] index 
-  #   
-  #          Index at which set is taking place.
-  #   
-  #   @param [Object] object
-  #   
-  #          Elements being inserted.
-  #
-  # @return [Object] 
-  #
-  #         Element returned.
-  #
-  def insert_without_hooks( index, *objects )
-
-    @without_hooks = true
-
-    super( index, *objects )
-    
-    @without_hooks = false
-
-    return objects
-
-  end
-
-  ########################
-  #  push_without_hooks  #
-  ########################
-
-  ###
-  # Alias to #push that bypasses hooks.
-  #
-  # @overload push_without_hooks( object, ... )
-  #
-  #   @param [Object] object
-  #   
-  #          Elements being pushed.
-  #
-  # @return [Array<Object>] 
-  #
-  #         Element(s) pushed.
-  #
-  def push_without_hooks( *objects )
-
-    @without_hooks = true
-
-    push( *objects )
-    
-    @without_hooks = false
-
-    return objects
-
-  end
-
-  ##########################
-  #  concat_without_hooks  #
-  ##########################
-
-  ###
-  # Alias to #concat that bypasses hooks.
-  #
-  # @param [Array<Object>] objects 
-  #
-  #        Elements being concatenated.
-  #
-  # @return [Object] 
-  #
-  #         Element returned.
-  #
-  def concat_without_hooks( *arrays )
-
-    @without_hooks = true
-
-    concat( *arrays )
-    
-    @without_hooks = false
-
-    return arrays
-
-  end
-
-  ##########################
-  #  delete_without_hooks  #
-  ##########################
-
-  ###
-  # Alias to #delete that bypasses hooks.
-  #
-  # @param [Object] object 
-  #
-  #        Element being deleted.
-  #
-  # @return [Object] 
-  #
-  #         Element returned.
-  #
-  def delete_without_hooks( object )
-
-    @without_hooks = true
-
-    return_value = delete( object )
-    
-    @without_hooks = false
-
-    return return_value
-
-  end
-
-  ##################################
-  #  delete_objects_without_hooks  #
-  ##################################
-
-  ###
-  # Alias to #delete that bypasses hooks and takes multiple objects.
-  #
-  # @param [Array<Object>] objects 
-  #
-  #        Elements being deleted.
-  #
-  # @return [Object] 
-  #
-  #         Element returned.
-  #
-  def delete_objects_without_hooks( *objects )
-
-    @without_hooks = true
-
-    return_value = delete_objects( *objects )
-    
-    @without_hooks = false
-
-    return return_value
-
-  end
-
-  #############################
-  #  delete_at_without_hooks  #
-  #############################
-
-  ###
-  # Alias to #delete_at that bypasses hooks.
-  #
-  # @param [Integer] index 
-  #
-  #        Index to delete.
-  #
-  # @return [Object] 
-  #
-  #         Deleted element.
-  #
-  def delete_at_without_hooks( index )
-
-    @without_hooks = true
-
-    object = delete_at( index )
-    
-    @without_hooks = false
-
-    return object
-    
-  end
-
-  #####################################
-  #  delete_at_indexes_without_hooks  #
-  #####################################
-
-  ###
-  # Alias to #delete_at that bypasses hooks and takes multiple indexes.
-  #
-  # @param [Array<Integer>] index 
-  #
-  #        Index to delete.
-  #
-  # @return [Object] 
-  #
-  #         Deleted element.
-  #
-  def delete_at_indexes_without_hooks( *indexes )
-    
-    @without_hooks = true
-
-    objects = delete_at_indexes( *indexes )
-    
-    @without_hooks = false
-  
-    return objects
-    
-  end
-  
-  #############################
-  #  delete_if_without_hooks  #
-  #############################
-
-  ###
-  # Alias to #delete_if that bypasses hooks.
-  #
-  # @yield 
-  #
-  #   Block passed to #delete_if.
-  #
-  # @return [Object] 
-  #
-  #         Deleted element.
-  #
-  def delete_if_without_hooks( & block )
-
-    @without_hooks = true
-
-    delete_if( & block )
-    
-    @without_hooks = false
-
-    return self
-
-  end
-
-  ###########################
-  #  keep_if_without_hooks  #
-  ###########################
-
-  ###
-  # Alias to #keep_if that bypasses hooks.
-  #
-  # @yield 
-  #
-  #   Block passed to #keep_if.
-  #
-  # @return [Object] 
-  #
-  #         Deleted element.
-  #
-  def keep_if_without_hooks( & block )
-
-    @without_hooks = true
-
-    keep_if( & block )
-    
-    @without_hooks = false
-
-    return self
-
-  end
-
-  ############################
-  #  compact_without_hooks!  #
-  ############################
-
-  ###
-  # Alias to #compact that bypasses hooks.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def compact_without_hooks!
-
-    @without_hooks = true
-
-    compact!
-    
-    @without_hooks = false
-
-    return self
-
-  end
-
-  ############################
-  #  flatten_without_hooks!  #
-  ############################
-
-  ###
-  # Alias to #flatten that bypasses hooks.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def flatten_without_hooks!
-
-    @without_hooks = true
-
-    return_value = flatten!
-    
-    @without_hooks = false
-
-    return return_value
-
-  end
-
-  ###########################
-  #  reject_without_hooks!  #
-  ###########################
-
-  ###
-  # Alias to #reject that bypasses hooks.
-  #
-  # @yield 
-  #
-  #   Block passed to #keep_if.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def reject_without_hooks!( & block )
-
-    @without_hooks = true
-
-    reject!( & block )
-    
-    @without_hooks = false
-
-    return return_value
-
-  end
-
-  ###########################
-  #  replace_without_hooks  #
-  ###########################
-
-  ###
-  # Alias to #replace that bypasses hooks.
-  #
-  # @param [Array] other_array 
-  #
-  #        Other array to replace self with.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def replace_without_hooks( other_array )
-    
-    @without_hooks = true
-
-    replace( other_array )
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
-  ############################
-  #  reverse_without_hooks!  #
-  ############################
-
-  ###
-  # Alias to #reverse that bypasses hooks.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def reverse_without_hooks!
-
-    @without_hooks = true
-
-    reverse!
-    
-    @without_hooks = false
-
-    return self
-
-  end
-
-  ###########################
-  #  rotate_without_hooks!  #
-  ###########################
-
-  ###
-  # Alias to #rotate that bypasses hooks.
-  #
-  # @param [Integer] rotate_count 
-  #
-  #        Integer count of how many elements to rotate.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def rotate_without_hooks!( rotate_count = 1 )
-
-    @without_hooks = true
-
-    rotate!( rotate_count )
-    
-    @without_hooks = false
-
-    return self
-
-  end
-  
-  ###########################
-  #  select_without_hooks!  #
-  ###########################
-
-  ###
-  # Alias to #select that bypasses hooks.
-  #
-  # @yield 
-  #
-  #   Block passed to #select!.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def select_without_hooks!( & block )
-  
-    @without_hooks = true
-
-    select!( & block )
-    
-    @without_hooks = false
-  
-    return self
-  
-  end
-  
-  ############################
-  #  shuffle_without_hooks!  #
-  ############################
-
-  ###
-  # Alias to #shuffle that bypasses hooks.
-  #
-  # @param [Object] random_number_generator 
-  #
-  #        Random number generator passed to #shuffle!.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def shuffle_without_hooks!( random_number_generator = nil )
-
-    @without_hooks = true
-
-    shuffle!( random_number_generator )
-    
-    @without_hooks = false
-
-    return self
-
-  end
-
-  ############################
-  #  collect_without_hooks!  #
-  #  map_without_hooks!      #
-  ############################
-
-  ###
-  # Alias to #select that bypasses hooks.
-  #
-  # @yield 
-  #
-  #   Block passed to #collect!.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def collect_without_hooks!( & block )
-    
-    @without_hooks = true
-
-    collect!( & block )
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
-  alias_method :map_without_hooks!, :collect_without_hooks!
-  
-  #########################
-  #  sort_without_hooks!  #
-  #########################
-
-  ###
-  # Alias to #sort that bypasses hooks.
-  #
-  # @yield 
-  #
-  #   Block passed to #sort!.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def sort_without_hooks!( & block )
-    
-    @without_hooks = true
-
-    sort!
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
-  ############################
-  #  sort_by_without_hooks!  #
-  ############################
-
-  ###
-  # Alias to #sort_by! that bypasses hooks.
-  #
-  # @yield 
-  #
-  #   Block passed to #sort_by!.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def sort_by_without_hooks!( & block )
-    
-    @without_hooks = true
-
-    sort_by!( & block )
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
-  #########################
-  #  uniq_without_hooks!  #
-  #########################
-
-  ###
-  # Alias to #uniq! that bypasses hooks.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def uniq_without_hooks!
-
-    @without_hooks = true
-
-    return_value = uniq!
-    
-    @without_hooks = false
-
-    return return_value
-
-  end
-  
-  ###########################
-  #  unshift_without_hooks  #
-  ###########################
-
-  ###
-  # Alias to #unshift that bypasses hooks.
-  #
-  # @param [Object] object 
-  #
-  #        Object to unshift onto self.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def unshift_without_hooks( object )
-
-    @without_hooks = true
-
-    unshift( object )
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
-  
-  #######################
-  #  pop_without_hooks  #
-  #######################
-
-  ###
-  # Alias to #pop that bypasses hooks.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def pop_without_hooks
-
-    @without_hooks = true
-
-    object = pop
-    
-    @without_hooks = false
-
-    return object
-
-  end
-  
-  #########################
-  #  shift_without_hooks  #
-  #########################
-
-  ###
-  # Alias to #shift that bypasses hooks.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def shift_without_hooks
-
-    @without_hooks = true
-
-    object = shift
-    
-    @without_hooks = false
-    
-    return object
-    
-  end
-  
-  ##########################
-  #  slice_without_hooks!  #
-  ##########################
-
-  ###
-  # Alias to #slice! that bypasses hooks.
-  #
-  # @param [Integer] index_start_or_range 
-  #
-  #        Index at which to begin slice.
-  #
-  # @param [Integer] length 
-  #
-  #        Length of slice.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def slice_without_hooks!( index_start_or_range, length = nil )
-
-    @without_hooks = true
-
-    slice = slice!( index_start_or_range, length )
-    
-    @without_hooks = false
-    
-    return slice
-    
-  end
-
-  #########################
-  #  clear_without_hooks  #
-  #########################
-
-  ###
-  # Alias to #clear that bypasses hooks.
-  #
-  # @return [Object] 
-  #
-  #         Self.
-  #
-  def clear_without_hooks
-
-    @without_hooks = true
-
-    clear
-    
-    @without_hooks = false
-    
-    return self
-    
-  end
+  end  
 
   ######################################################################################################################
       private ##########################################################################################################
@@ -1710,8 +1436,8 @@ module ::Array::Hooked::ArrayInterface
     
     # if we have less elements in self than the index we are inserting at
     # we need to make sure the nils inserted cascade
-    if index > count
-      nils_created = index - count
+    if index > length
+      nils_created = index - length
       index -= nils_created
       nils_created.times do |this_time|
         objects.unshift( nil )
