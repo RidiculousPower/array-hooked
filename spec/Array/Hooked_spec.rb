@@ -87,7 +87,7 @@ describe ::Array::Hooked::WithoutInternalArray do
   #  new  #
   #########
 
-  it 'should have a subclass self.class::WithoutInternalArray for internal duplication, which initialize without creating the internal array' do
+  it 'can initialize without creating the internal array' do
     array_without_internal_array = ::Array::Hooked::WithoutInternalArray.new
     array_without_internal_array.internal_array.should == nil
   end
@@ -96,7 +96,7 @@ describe ::Array::Hooked::WithoutInternalArray do
   #  new( configuration_instance )  #
   ###################################
   
-  it 'should have a subclass self.class::WithoutInternalArray for internal duplication, which initialize without creating the internal array' do
+  it 'can initialize with a configuration instance without creating the internal array' do
     configuration_instance = ::Object.new
     array_without_internal_array = ::Array::Hooked::WithoutInternalArray.new( configuration_instance )
     array_without_internal_array.internal_array.should == nil
@@ -110,83 +110,198 @@ end
 ######################
 
 describe ::Array::Hooked do
+  
+  ########
+  #  ==  #
+  ########
+  
+  it 'can == another array' do
+    pending
+  end
 
+  #########
+  #  <=>  #
+  #########
+  
+  it 'can <=> another array' do
+    
+  end
+  
   #######
   #  +  #
   #######
 
-  it 'can + elements' do
+  it 'can + another array' do
     hooked_array = ::Array::Hooked.new
     hooked_array += [ :A ]
     hooked_array.should == [ :A ]
   end
-
+  
   #######
   #  -  #
   #######
   
-  it 'can - an array' do
+  it 'can - another array' do
     hooked_array = ::Array::Hooked.new( nil, [ :A ] )
     hooked_array -= [ :A ]
     hooked_array.should == [ ]
+  end
+
+  #######
+  #  *  #
+  #######
+  
+  it 'can * by an integer' do
+    pending
+  end
+
+  it 'can * by a string' do
+    pending
+  end
+  
+  #######
+  #  &  #
+  #######
+  
+  it 'can & another array' do
+    pending
+  end
+
+  #######
+  #  |  #
+  #######
+  
+  it 'can | another array' do
+    pending
   end
 
   ########
   #  <<  #
   ########
 
-  it 'can add elements' do
+  it 'can << elements' do
     hooked_array = ::Array::Hooked.new
     hooked_array << :A
     hooked_array.should == [ :A ]
   end
 
-  #######
-  #  &  #
-  #######
-
-  #######
-  #  *  #
-  #######
-
-  #########
-  #  <=>  #
-  #########
-
   ########
-  #  ==  #
+  #  []  #
   ########
 
-  #######
-  #  |  #
-  #######
+  it 'can retrieve elements with an index' do
+    pending
+  end
+
+  it 'can retrieve elements with a start index and a length' do
+    pending
+  end
+
+  it 'can retrieve elements with a range' do
+    pending
+  end
+
+  #########
+  #  []=  #
+  #########
+
+  it 'can store elements at an index' do
+    hooked_array = ::Array::Hooked.new
+    hooked_array[ 0 ] = :A
+    hooked_array.should == [ :A ]
+    hooked_array[ 1 ] = :B
+    hooked_array.should == [ :A, :B ]
+    hooked_array[ 0 ] = :D
+    hooked_array.should == [ :D, :B ]
+  end
+
+  it 'can store elements with a start index and a length' do
+    pending
+  end
+
+  it 'can store elements with a range' do
+    pending
+  end
+
+  ################
+  #  hooked_set  #
+  ################
+  
+  it 'aliases set for direct calling from subclasses' do
+    pending
+  end
 
   ###########
   #  assoc  #
   ###########
 
+  it 'can assoc search' do
+    pending
+  end
+
+  ########
+  #  at  #
+  ########
+
+  it 'aliases []' do
+    pending
+  end
+
+  ###########
+  #  clear  #
+  ###########
+
+  it 'can clear, causing present elements to be excluded' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A ] )
+    hooked_array.clear
+    hooked_array.should == [ ]
+  end
+
+  #############
+  #  collect  #
+  #############
+
+  it 'can collect with a block' do
+    pending
+  end
+
+  it 'can collect with an enumerator' do
+    pending
+  end
+
   ##############
   #  collect!  #
   ##############
-
-  it 'can replace by collect/map' do
+  
+  it 'can replace by collect with a block' do
     hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
     hooked_array.collect! { :C }
     hooked_array.should == [ :C, :C, :C ]
     hooked_array.collect!.is_a?( Enumerator ).should == true
   end
 
-  ##########
-  #  map!  #
-  ##########
-
-  #############
-  #  collect  #
-  #############
+  it 'can replace by collect with an enumerator' do
+  end
 
   #################
   #  combination  #
   #################
+
+  it 'can yield combinations with a block' do
+    pending
+  end
+
+
+  it 'can replace by collect with an enumerator' do
+  end
+
+  #############
+  #  compact  #
+  #############
+
+  it 'can compact' do
+    pending
+  end
 
   ##############
   #  compact!  #
@@ -198,385 +313,6 @@ describe ::Array::Hooked do
     hooked_array.should == [ :A, :B, :C ]
   end
 
-  #############
-  #  compact  #
-  #############
-
-  ###########
-  #  count  #
-  ###########
-
-  ###########
-  #  cycle  #
-  ###########
-
-  ##########
-  #  drop  #
-  ##########
-
-  ################
-  #  drop_while  #
-  ################
-
-  ##########
-  #  each  #
-  ##########
-
-  ################
-  #  each_index  #
-  ################
-
-  ############
-  #  empty?  #
-  ############
-
-  ###########
-  #  fetch  #
-  ###########
-
-  ##########
-  #  fill  #
-  ##########
-
-  ################
-  #  find_index  #
-  ################
-
-  ###########
-  #  index  #
-  ###########
-
-  ###########
-  #  first  #
-  ###########
-
-  ##############
-  #  flatten!  #
-  ##############
-
-  it 'can flatten' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A, [ :F_A, :F_B ], :B, [ :F_C ], :C, [ :F_D ], [ :F_E ] ] )
-    hooked_array.flatten!
-    hooked_array.should == [ :A, :F_A, :F_B, :B, :F_C, :C, :F_D, :F_E ]
-  end
-
-  #############
-  #  flatten  #
-  #############
-
-  ############
-  #  freeze  #
-  ############
-
-  ##########
-  #  hash  #
-  ##########
-
-  ##############
-  #  include?  #
-  ##############
-
-  #############
-  #  inspect  #
-  #############
-
-  ##########
-  #  join  #
-  ##########
-
-  ##########
-  #  last  #
-  ##########
-
-  ############
-  #  length  #
-  ############
-
-  #########
-  #  map  #
-  #########
-
-  ##########
-  #  pack  #
-  ##########
-
-  #################
-  #  permutation  #
-  #################
-
-  #############
-  #  product  #
-  #############
-
-  ############
-  #  rassoc  #
-  ############
-
-  #############
-  #  reject!  #
-  #############
-
-  it 'can reject' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
-    hooked_array.reject! do |object|
-      object != :C
-    end
-    hooked_array.should == [ :C ]
-  end
-
-  ############
-  #  reject  #
-  ############
-
-  ##########################
-  #  repeated_combination  #
-  ##########################
-
-  ##########################
-  #  repeated_permutation  #
-  ##########################
-
-  ##############
-  #  reverse!  #
-  ##############
-
-  it 'can reverse self' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
-    hooked_array.reverse!
-    hooked_array.should == [ :C, :B, :A ]
-  end
-
-  #############
-  #  reverse  #
-  #############
-
-  ##################
-  #  reverse_each  #
-  ##################
-
-  ############
-  #  rindex  #
-  ############
-
-  #############
-  #  rotate!  #
-  #############
-
-  it 'can rotate self' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
-    hooked_array.rotate!
-    hooked_array.should == [ :B, :C, :A ]
-    hooked_array.rotate!( -1 )
-    hooked_array.should == [ :A, :B, :C ]
-  end
-
-  ############
-  #  rotate  #
-  ############
-
-  ############
-  #  sample  #
-  ############
-
-  #############
-  #  select!  #
-  #############
-
-  it 'can keep by select' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
-    hooked_array.select! do |object|
-      object == :C
-    end
-    hooked_array.should == [ :C ]
-    hooked_array.select!.is_a?( Enumerator ).should == true
-  end
-
-  ############
-  #  select  #
-  ############
-
-  ##############
-  #  shuffle!  #
-  ##############
-
-  it 'can shuffle self' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
-    prior_version = hooked_array.dup
-    attempts = [ ]
-    50.times do
-      hooked_array.shuffle!
-      attempts.push( hooked_array == prior_version )
-      prior_version = hooked_array.dup
-    end
-    attempts_correct = attempts.select { |member| member == false }.count
-    ( attempts_correct >= 10 ).should == true
-    first_shuffle_version = hooked_array
-  end
-
-  #############
-  #  shuffle  #
-  #############
-
-  ############
-  #  length  #
-  ############
-
-  ##########
-  #  size  #
-  ##########
-
-  ############
-  #  slice!  #
-  ############
-  
-  it 'can slice elements' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A ])
-    hooked_array.slice!( 0, 1 ).should == [ :A ]
-    hooked_array.should == [ ]
-  end
-  
-  ###########
-  #  slice  #
-  ###########
-
-  ###########
-  #  sort!  #
-  ###########
-
-  it 'can sort' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
-    hooked_array.sort! do |a, b|
-      if a < b
-        1
-      elsif a > b
-        -1
-      elsif a == b
-        0
-      end
-    end
-    hooked_array.should == [ :C, :B, :A ]
-    hooked_array.sort!
-    hooked_array.should == [ :A, :B, :C ]
-  end
-
-  ##########
-  #  sort  #
-  ##########
-
-  ##############
-  #  sort_by!  #
-  ##############
-
-  it 'can replace by collect/map' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
-    hooked_array.sort_by! do |object|
-      case object
-      when :A
-        :B
-      when :B
-        :A
-      when :C
-        :C
-      end
-    end
-    hooked_array.should == [ :B, :A, :C ]
-    hooked_array.sort_by!.is_a?( Enumerator ).should == true
-  end
-
-  ##########
-  #  take  #
-  ##########
-
-  ################
-  #  take_while  #
-  ################
-
-  ##########
-  #  to_a  #
-  ##########
-
-  ############
-  #  to_ary  #
-  ############
-
-  ##########
-  #  to_s  #
-  ##########
-
-  ###############
-  #  transpose  #
-  ###############
-
-  ###########
-  #  uniq!  #
-  ###########
-
-  it 'can remove non-unique elements' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C, :C, :C, :B, :A ] )
-    hooked_array.uniq!
-    hooked_array.should == [ :A, :B, :C ]
-  end
-
-  ##########
-  #  uniq  #
-  ##########
-
-  ###############
-  #  values_at  #
-  ###############
-
-  #########
-  #  zip  #
-  #########
-
-  ########
-  #  []  #
-  ########
-
-  ########
-  #  at  #
-  ########
-
-  #########
-  #  []=  #
-  #########
-
-  it 'can store elements' do
-    hooked_array = ::Array::Hooked.new
-    hooked_array[ 0 ] = :A
-    hooked_array.should == [ :A ]
-    hooked_array[ 1 ] = :B
-    hooked_array.should == [ :A, :B ]
-    hooked_array[ 0 ] = :D
-    hooked_array.should == [ :D, :B ]
-  end
-
-  ################
-  #  hooked_set  #
-  ################
-
-  ############
-  #  insert  #
-  ############
-
-  it 'can insert elements' do
-    hooked_array = ::Array::Hooked.new
-    hooked_array.insert( 3, :D )
-    hooked_array.should == [ nil, nil, nil, :D ]
-    hooked_array.insert( 1, :B )
-    hooked_array.should == [ nil, :B, nil, nil, :D ]
-    hooked_array.insert( 2, :C )
-    hooked_array.should == [ nil, :B, :C, nil, nil, :D ]
-  end
-
-  ###################
-  #  hooked_insert  #
-  ###################
-
-  ##########
-  #  push  #
-  ##########
-
   ############
   #  concat  #
   ############
@@ -585,6 +321,34 @@ describe ::Array::Hooked do
     hooked_array = ::Array::Hooked.new
     hooked_array.concat( [ :A ] )
     hooked_array.should == [ :A ]
+  end
+
+  ###########
+  #  count  #
+  ###########
+
+  it 'can return count of elements (length/size)' do
+    pending
+  end
+
+  it 'can count elements matching object' do
+    pending
+  end
+
+  it 'can count elements for which block is true' do
+    pending
+  end
+
+  ###########
+  #  cycle  #
+  ###########
+
+  it 'repeatedly cycle a block' do
+    pending
+  end
+
+  it 'repeatedly cycle via enumerator' do
+    pending
   end
 
   ############
@@ -597,9 +361,17 @@ describe ::Array::Hooked do
     hooked_array.should == [ ]
   end
 
+  it 'can delete elements with block to process objects not found' do
+    pending
+  end
+
   ###################
   #  hooked_delete  #
   ###################
+
+  it 'aliases delete for direct calling from subclasses' do
+    pending
+  end
 
   ####################
   #  delete_objects  #
@@ -644,6 +416,218 @@ describe ::Array::Hooked do
     hooked_array.delete_if.is_a?( Enumerator ).should == true
   end
 
+  it 'can delete by enumerator' do
+  end
+  
+  ##########
+  #  drop  #
+  ##########
+
+  it 'can drop elements' do
+    pending
+  end
+
+  ################
+  #  drop_while  #
+  ################
+
+  it 'can drop elements for a block' do
+    pending
+  end
+
+  it 'can drop elements for enumerator' do
+    pending
+  end
+
+  ##########
+  #  each  #
+  ##########
+
+  it 'can iterate for a block' do
+    pending
+  end
+
+  it 'can iterate for enumerator' do
+    pending
+  end
+
+  ################
+  #  each_index  #
+  ################
+
+  it 'can iterate indexes for a block' do
+    pending
+  end
+
+  it 'can iterate indexes for enumerator' do
+    pending
+  end
+
+  ############
+  #  empty?  #
+  ############
+
+  it 'can report if empty' do
+    pending
+  end
+
+  ##########
+  #  eql?  #
+  ##########
+
+  it 'can report it is the same instance or has the same contents' do
+    pending
+  end
+
+  ###########
+  #  fetch  #
+  ###########
+
+  it 'can fetch an index' do
+    pending
+  end
+
+  it 'can fetch an index or return a default value' do
+    pending
+  end
+
+  it 'can fetch an index or return a default value from a block' do
+    pending
+  end
+
+  ##########
+  #  fill  #
+  ##########
+
+  it 'can fill indexes with an object' do
+    pending
+  end
+
+  it 'can fill indexes with an object from a start index for a length' do
+    pending
+  end
+
+  it 'can fill a range with an object' do
+    pending
+  end
+
+  it 'can fill with a block' do
+    pending
+  end
+
+  it 'can fill from a start index for a length with a block' do
+    pending
+  end
+
+  it 'can fill a range with a block' do
+    pending
+  end
+
+  ################
+  #  find_index  #
+  ################
+
+  it 'can find an index for an object' do
+    pending
+  end
+
+  it 'can find an index for a block' do
+    pending
+  end
+
+  it 'can find an index for enumerator' do
+    pending
+  end
+
+  ###########
+  #  index  #
+  ###########
+
+  it 'aliases #index to #find_index' do
+    pending
+  end
+
+  ###########
+  #  first  #
+  ###########
+
+  it 'can get the first element' do
+    pending
+  end
+
+  it 'can get the first n elements' do
+    pending
+  end
+
+  #############
+  #  flatten  #
+  #############
+
+  it 'can flatten' do
+    pending
+  end
+
+  it 'can flatten to n depth' do
+    pending
+  end
+
+  ##############
+  #  flatten!  #
+  ##############
+
+  it 'can flatten' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, [ :F_A, :F_B ], :B, [ :F_C ], :C, [ :F_D ], [ :F_E ] ] )
+    hooked_array.flatten!
+    hooked_array.should == [ :A, :F_A, :F_B, :B, :F_C, :C, :F_D, :F_E ]
+  end
+
+  it 'can flatten to n depth' do
+  end
+  
+  ############
+  #  freeze  #
+  ############
+
+  it 'can freeze' do
+    pending
+  end
+
+  ##########
+  #  hash  #
+  ##########
+
+  it 'two arrays with same content have the same hash' do
+    pending
+  end
+
+  ##############
+  #  include?  #
+  ##############
+
+  it 'can report if an object is included in array' do
+    pending
+  end
+
+  #############
+  #  inspect  #
+  #############
+
+  it 'can output as string' do
+    pending
+  end
+
+  ##########
+  #  join  #
+  ##########
+
+  it 'can join elements with no separation' do
+    pending
+  end
+
+  it 'can join with string' do
+    pending
+  end
+
   #############
   #  keep_if  #
   #############
@@ -654,6 +638,173 @@ describe ::Array::Hooked do
       object == :C
     end
     hooked_array.should == [ :C ]
+  end
+  
+  it 'can keep by enumerator' do
+  end
+
+  ##########
+  #  last  #
+  ##########
+
+  it 'can return last object' do
+    pending
+  end
+
+  it 'can return last n objects' do
+    pending
+  end
+
+  ############
+  #  length  #
+  ############
+
+  it 'can report length/size' do
+    pending
+  end
+
+  #########
+  #  map  #
+  #########
+
+  it 'can collect/map by block' do
+    pending
+  end
+
+  it 'can collect/map by enumerator' do
+    pending
+  end
+
+  ##########
+  #  map!  #
+  ##########
+
+  it 'can replace self by collect/map by block' do
+    pending
+  end
+
+  it 'can replace self by collect/map by enumerator' do
+    pending
+  end
+
+  ##########
+  #  pack  #
+  ##########
+
+  it 'can pack via template string' do
+    pending
+  end
+
+  #################
+  #  permutation  #
+  #################
+
+  it 'can return permutations by block' do
+    pending
+  end
+
+  it 'can return permutations by enumerator' do
+    pending
+  end
+  
+  it 'can return a number of permutations by block' do
+    pending
+  end
+  
+  it 'can return a number of permutations by enumerator' do
+    pending
+  end
+
+  #########
+  #  pop  #
+  #########
+  
+  it 'can pop the final element' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A ] )
+    hooked_array.pop.should == :A
+    hooked_array.should == [ ]
+  end
+
+  it 'can pop the final n elements' do
+  end
+
+  #############
+  #  product  #
+  #############
+
+  it 'can return all products of arrays' do
+    pending
+  end
+
+  it 'can return self after processing all products of arrays with block' do
+    pending
+  end
+
+  ##########
+  #  push  #
+  ##########
+
+  it 'can append object(s) to end of array' do
+    pending
+  end
+
+  ############
+  #  rassoc  #
+  ############
+
+  it 'can right associative search' do
+    pending
+  end
+
+  ############
+  #  reject  #
+  ############
+
+  it 'can reject elements by block' do
+    pending
+  end
+
+  it 'can reject elements by enumerator' do
+    pending
+  end
+
+  #############
+  #  reject!  #
+  #############
+
+  it 'can reject by block' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
+    hooked_array.reject! do |object|
+      object != :C
+    end
+    hooked_array.should == [ :C ]
+  end
+
+  it 'can reject by enumerator' do
+  end
+  
+  ##########################
+  #  repeated_combination  #
+  ##########################
+
+  it 'can do repeated combination by block' do
+    pending
+  end
+
+  it 'can do repeated combination by enumerator' do
+    pending
+  end
+
+  ##########################
+  #  repeated_permutation  #
+  ##########################
+
+  it 'can do repeated permutation by block' do
+    pending
+  end
+
+  it 'can do repeated permutation by enumerator' do
+    pending
   end
 
   #############
@@ -667,27 +818,142 @@ describe ::Array::Hooked do
 
   end
 
-  #############
-  #  unshift  #
-  #############
+  ############
+  #  insert  #
+  ############
 
-  it 'can unshift onto the first element' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A ] )
-    hooked_array.unshift( :B )
-    hooked_array.should == [ :B, :A ]
+  it 'can insert elements' do
+    hooked_array = ::Array::Hooked.new
+    hooked_array.insert( 3, :D )
+    hooked_array.should == [ nil, nil, nil, :D ]
+    hooked_array.insert( 1, :B )
+    hooked_array.should == [ nil, :B, nil, nil, :D ]
+    hooked_array.insert( 2, :C )
+    hooked_array.should == [ nil, :B, :C, nil, nil, :D ]
   end
 
-  #########
-  #  pop  #
-  #########
+  ###################
+  #  hooked_insert  #
+  ###################
+
+  it 'aliases insert for direct calling from subclasses' do
+    pending
+  end
+
+  #############
+  #  reverse  #
+  #############
+
+  it 'can return a duplicate of self, reversed' do
+    pending
+  end
+
+  ##############
+  #  reverse!  #
+  ##############
+
+  it 'can reverse self' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
+    hooked_array.reverse!
+    hooked_array.should == [ :C, :B, :A ]
+  end
+
+  ##################
+  #  reverse_each  #
+  ##################
+
+  it 'can iterate backwards with a block' do
+    pending
+  end
+
+  it 'can iterate backwards with an enumerator' do
+    pending
+  end
+
+  ############
+  #  rindex  #
+  ############
+
+  it 'can return last index matching object' do
+    pending
+  end
+
+  it 'can return last index matching block' do
+    pending
+  end
+
+  it 'can return last index matching enumerator' do
+    pending
+  end
+
+  ############
+  #  rotate  #
+  ############
+
+  it 'can return a duplicate of self rotated' do
+    pending
+  end
+
+  #############
+  #  rotate!  #
+  #############
+
+  it 'can rotate self' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
+    hooked_array.rotate!
+    hooked_array.should == [ :B, :C, :A ]
+    hooked_array.rotate!( -1 )
+    hooked_array.should == [ :A, :B, :C ]
+  end
+
+  ############
+  #  sample  #
+  ############
+
+  it 'can sample an object' do
+    pending
+  end
+
+  it 'can sample with a random number generator' do
+    pending
+  end
+
+  it 'can sample n elements' do
+    pending
+  end
+
+  it 'can sample n elements with a random number generator' do
+    pending
+  end
+
+  ############
+  #  select  #
+  ############
+
+  it 'can select items using a block' do
+    pending
+  end
+
+  it 'can select items using an enumerator' do
+    pending
+  end
+
+  #############
+  #  select!  #
+  #############
+
+  it 'can keep by select with block' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
+    hooked_array.select! do |object|
+      object == :C
+    end
+    hooked_array.should == [ :C ]
+    hooked_array.select!.is_a?( Enumerator ).should == true
+  end
+
+  it 'can keep by select with enumerator' do
+  end
   
-  it 'can pop the final element' do
-
-    hooked_array = ::Array::Hooked.new( nil, [ :A ] )
-    hooked_array.pop.should == :A
-    hooked_array.should == [ ]
-  end
-
   ###########
   #  shift  #
   ###########
@@ -698,14 +964,255 @@ describe ::Array::Hooked do
     hooked_array.should == [ ]
   end
 
+  it 'can shift the first n elements' do
+  end
+  
+  #############
+  #  shuffle  #
+  #############
+
+  it 'can return shuffled duplicate' do
+    pending
+  end
+
+  it 'can return shuffled duplicate using random number generator' do
+    pending
+  end
+
+  ##############
+  #  shuffle!  #
+  ##############
+
+  it 'can shuffle self' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
+    prior_version = hooked_array.dup
+    attempts = [ ]
+    50.times do
+      hooked_array.shuffle!
+      attempts.push( hooked_array == prior_version )
+      prior_version = hooked_array.dup
+    end
+    attempts_correct = attempts.select { |member| member == false }.count
+    ( attempts_correct >= 10 ).should == true
+    first_shuffle_version = hooked_array
+  end
+
+  it 'can shuffle self with a random number generator' do
+  end
+  
+  ##########
+  #  size  #
+  ##########
+
+  it 'aliases #length as #size' do
+    pending
+  end
+
   ###########
-  #  clear  #
+  #  slice  #
   ###########
 
-  it 'can clear, causing present elements to be excluded' do
-    hooked_array = ::Array::Hooked.new( nil, [ :A ] )
-    hooked_array.clear
+  it 'can slice an index' do
+    pending
+  end
+
+  it 'can slice from a start index for a length' do
+    pending
+  end
+  
+  it 'can slice a range' do
+    pending
+  end
+
+  ############
+  #  slice!  #
+  ############
+  
+  it 'can slice an index' do
+    pending
+  end
+  
+  it 'can slice from a start index for a length' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A ])
+    hooked_array.slice!( 0, 1 ).should == [ :A ]
     hooked_array.should == [ ]
+  end
+
+  it 'can slice a range' do
+    pending
+  end
+  
+  ##########
+  #  sort  #
+  ##########
+
+  it 'can return a sorted duplicate' do
+    pending
+  end
+
+  it 'can return a duplicate sorted by a block' do
+    pending
+  end
+
+  ###########
+  #  sort!  #
+  ###########
+
+  it 'can sort self by block' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
+    hooked_array.sort! do |a, b|
+      if a < b
+        1
+      elsif a > b
+        -1
+      elsif a == b
+        0
+      end
+    end
+    hooked_array.should == [ :C, :B, :A ]
+    hooked_array.sort!
+    hooked_array.should == [ :A, :B, :C ]
+  end
+
+  it 'can sort self by enumerator' do
+  end
+  
+  ##############
+  #  sort_by!  #
+  ##############
+
+  it 'can sort itself by result provided by block' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C ] )
+    hooked_array.sort_by! do |object|
+      case object
+      when :A
+        :B
+      when :B
+        :A
+      when :C
+        :C
+      end
+    end
+    hooked_array.should == [ :B, :A, :C ]
+    hooked_array.sort_by!.is_a?( Enumerator ).should == true
+  end
+
+  it 'can sort itself by result provided by enumerator' do
+  end
+  
+  ##########
+  #  take  #
+  ##########
+
+  it 'can take n elements' do
+    pending
+  end
+
+  ################
+  #  take_while  #
+  ################
+
+  it 'can take elements via block until block returns false' do
+    pending
+  end
+
+  it 'can take elements via enumerator' do
+    pending
+  end
+
+  ##########
+  #  to_a  #
+  ##########
+
+  it 'can return self' do
+    pending
+  end
+
+  ############
+  #  to_ary  #
+  ############
+
+  it 'can return self' do
+    pending
+  end
+
+  ##########
+  #  to_s  #
+  ##########
+
+  it '#to_s is aliased to #inspect' do
+    pending
+  end
+
+  ###############
+  #  transpose  #
+  ###############
+
+  it 'can transpose rows and columns' do
+    pending
+  end
+
+  ##########
+  #  uniq  #
+  ##########
+
+  it 'can return a unique duplicate' do
+    pending
+  end
+
+  it 'can return a unique duplicate by comparing block result' do
+    pending
+  end
+
+  ###########
+  #  uniq!  #
+  ###########
+
+  it 'can remove non-unique elements' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A, :B, :C, :C, :C, :B, :A ] )
+    hooked_array.uniq!
+    hooked_array.should == [ :A, :B, :C ]
+  end
+
+  it 'can remove non-unique elements by comparing block result' do
+  end
+  
+  #############
+  #  unshift  #
+  #############
+
+  it 'can unshift onto the first element' do
+    hooked_array = ::Array::Hooked.new( nil, [ :A ] )
+    hooked_array.unshift( :B )
+    hooked_array.should == [ :B, :A ]
+  end
+
+  ###############
+  #  values_at  #
+  ###############
+
+  it 'can return values at indexes or ranges' do
+    pending
+  end
+
+  #########
+  #  zip  #
+  #########
+
+  it 'can zip self' do
+    pending
+  end
+
+  it 'can zip self and then run block' do
+    pending
+  end
+
+  ############
+  #  *splat  #
+  ############
+  
+  it 'should call #to_a when splatted' do
+    
   end
 
   ##################
