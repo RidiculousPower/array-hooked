@@ -55,10 +55,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # Concatenation—Returns a new array built by concatenating the two arrays together 
   #   to produce a third array.
   #
-  def +( array )
+  def +( other_array )
 
-    result_array = dup
-    result_array.push( *array )
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array + other_array
 
     return result_array
 
@@ -72,10 +72,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # Array Difference—Returns a new array that is a copy of the original array, removing 
   #   any items that also appear in other_ary.
   #
-  def -( array )
+  def -( other_array )
     
-    result_array = dup
-    result_array.delete_objects( *array )
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array - other_array
 
     return result_array
 
@@ -101,8 +101,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
       when ::String
         return_value = @internal_array * integer_or_string
       when ::Integer
-        return_value = dup
-        return_value.internal_array *= integer_or_string
+        return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+        return_value.internal_array = @internal_array * integer_or_string
     end
     
     return return_value
@@ -124,8 +124,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
         other_array = other_array.internal_array
     end
     
-    result_array = dup
-    result_array.internal_array &= other_array
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array & other_array
     
     return result_array
     
@@ -145,8 +145,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
         other_array = other_array.internal_array
     end
     
-    result_array = dup
-    result_array.internal_array |= other_array
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array | other_array
     
     return result_array
     
@@ -331,7 +331,16 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def collect( & block )
 
-    return dup.collect!( & block )
+    return_value = nil
+    
+    if block_given?
+      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+      return_value.internal_array = @internal_array.collect( & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+
+    return return_value
 
   end
 
@@ -390,7 +399,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def compact
     
-    return dup.compact!
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array.compact
+    
+    return result_array
     
   end
 
@@ -611,15 +623,15 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     indexes = indexes.sort.uniq.reverse
 
-    deleted_objects = self.class.new( @configuration_instance )
-
+    deleted_objects = [ ]
     indexes.each do |this_index|
       deleted_objects.push( delete_at( this_index ) )
     end
 
-    deleted_objects.reverse!
+    return_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    return_array.internal_array = deleted_objects.reverse
     
-    return deleted_objects
+    return return_array
 
   end
 
@@ -884,7 +896,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def flatten( level = 1 )
     
-    return dup.flatten!( level )
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array.flatten( level )
+    
+    return result_array
     
   end
 
@@ -933,6 +948,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   This method returns self.
   #
   def freeze
+    
+    super
     
     @internal_array.freeze
     
@@ -1219,7 +1236,16 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def reject( & block )
     
-    return dup.reject!( & block )
+    result_array = nil
+    
+    if block_given?
+      result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      result_array.internal_array = @internal_array.reject( & block )
+    else
+      result_array = to_enum( __method__ )
+    end
+    
+    return result_array
     
   end
 
@@ -1236,7 +1262,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   def reject!
 
     return to_enum unless block_given?
-
+    
     return_value = nil
 
     deleted_objects = 0
@@ -1316,11 +1342,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     clear
 
-    other_array.each_with_index do |this_object, index|
-      unless self[ index ] == this_object
-        self[ index ] = this_object
-      end
-    end
+    concat( other_array )
 
     return self
 
@@ -1374,7 +1396,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def reverse
 
-    return dup.reverse!
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array.reverse
+
+    return result_array
 
   end
   
@@ -1387,7 +1412,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def reverse!
 
-    @internal_array.reverse!
+    replace( @internal_array.reverse )
 
     return self
 
@@ -1448,9 +1473,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # Returns new array by rotating self so that the element at cnt in self is the first element of the 
   #   new array. If cnt is negative then it rotates in the opposite direction.
   #
-  def rotate( count = 1 )
+  def rotate( rotate_count = 1 )
     
-    return dup.rotate!( count )
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array.rotate( rotate_count )
+    
+    return result_array
     
   end
 
@@ -1464,7 +1492,9 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def rotate!( rotate_count = 1 )
 
-    @internal_array.rotate!( rotate_count )
+    rotated_array = @internal_array.rotate( rotate_count )
+
+    replace( rotated_array )
 
     return self
 
@@ -1496,9 +1526,18 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   elements for which the block returns a true value (equivalent to Enumerable#select).
   #   If no block is given, an enumerator is returned instead.
   #
-  def select
+  def select( & block )
     
-    return dup.select!
+    return_value = nil
+    
+    if block_given?
+      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+      return_value.internal_array = @internal_array.select( & block )
+    else
+      return_value = to_enum( __method__ )
+    end
+    
+    return return_value
     
   end
 
@@ -1512,7 +1551,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   See also Array#keep_if
   #   If no block is given, an enumerator is returned instead.
   #
-  def select!
+  def select!( & block )
 
     return to_enum unless block_given?
 
@@ -1563,7 +1602,15 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def shuffle( random_number_generator = nil )
     
-    return dup.shuffle!( random_number_generator )
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    
+    if random_number_generator
+      result_array.internal_array = @internal_array.shuffle( random: random_number_generator )
+    else
+      result_array.internal_array = @internal_array.shuffle
+    end
+    
+    return result_array
     
   end
 
@@ -1601,9 +1648,19 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   count backward from the end of the array (-1 is the last element). Returns nil if the index 
   #   (or starting index) are out of range.
   #
-  def slice( *args )
+  def slice( index_start_or_range, slice_length = nil )
     
-    return dup.slice!( *args )
+    if slice_length
+      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+      return_value.internal_array = @internal_array.slice( index_start_or_range, slice_length )
+    elsif index_start_or_range.is_a?( ::Range )
+      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+      return_value.internal_array = @internal_array.slice( index_start_or_range )
+    else
+      return_value = @internal_array.slice( index_start_or_range )
+    end
+    
+    return return_value
     
   end
 
@@ -1670,7 +1727,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def sort( & block )
     
-    return dup.sort!( & block )
+    return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+    return_value.internal_array = @internal_array.sort( & block )
+    
+    return return_value
     
   end
 
@@ -1684,9 +1744,9 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   See also Enumerable#sort_by.
   #
   def sort!( & block )
-
-    @internal_array.sort!( & block )
-
+        
+    replace( @internal_array.sort( & block ) )
+    
     return self
 
   end
@@ -1723,7 +1783,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def take( number )
     
-    return slice( 0, number - 1 )
+    return slice( 0, number )
     
   end
 
@@ -1741,7 +1801,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     return_value = self
     
     if block_given?
-      @internal_array.take_while( & block )
+      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+      return_value.internal_array = @internal_array.take_while( & block )
     else
       return_value = to_enum( __method__ )
     end
@@ -1794,8 +1855,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def transpose
     
-    result_array = dup
-    result_array.internal_array.transpose( other_array )
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array.transpose
     
     return result_array
     
@@ -1811,7 +1872,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def uniq( & block )
     
-    return dup.uniq!( & block )
+    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    result_array.internal_array = @internal_array.uniq( & block )
+    
+    return result_array
     
   end
 
