@@ -20,11 +20,15 @@ module ::Array::Hooked::ArrayInterface::Hooks
   #
   #        Whether this set is inserting a new index.
   #
+  # @param [Integer] length 
+  #
+  #        Length of set if other than 1.
+  #
   # @return [Object] 
   #
   #         Return value is used in place of object.
   #
-  def pre_set_hook( index, object, is_insert = false )
+  def pre_set_hook( index, object, is_insert = false, length = nil )
 
     return object
     
@@ -49,11 +53,15 @@ module ::Array::Hooked::ArrayInterface::Hooks
   #
   #        Whether this set is inserting a new index.
   #
+  # @param [Integer] length 
+  #
+  #        Length of set if other than 1.
+  #
   # @return [Object] 
   #
   #         Ignored.
   #
-  def post_set_hook( index, object, is_insert = false )
+  def post_set_hook( index, object, is_insert = false, length = nil )
     
     return object
     
@@ -70,11 +78,15 @@ module ::Array::Hooked::ArrayInterface::Hooks
   #
   #        Index at which set/insert is taking place.
   #
+  # @param [Integer] length 
+  #
+  #        Length of get if other than 1.
+  #
   # @return [true,false] 
   #
   #         If return value is false, get does not occur.
   #
-  def pre_get_hook( index )
+  def pre_get_hook( index, length = nil )
     
     # false means get does not take place
     return true
@@ -96,11 +108,15 @@ module ::Array::Hooked::ArrayInterface::Hooks
   #
   #        Element retrieved.
   #
+  # @param [Integer] length 
+  #
+  #        Length of get if other than 1.
+  #
   # @return [Object] 
   #
   #         Object returned in place of get result.
   #
-  def post_get_hook( index, object )
+  def post_get_hook( index, object, length = nil )
     
     return object
     

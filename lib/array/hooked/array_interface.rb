@@ -5,13 +5,13 @@ module ::Array::Hooked::ArrayInterface
   instances_identify_as!( ::Array, 
                           ::Array::Hooked )
   
+  include ::Enumerable
+  
   include ::Array::Hooked::ArrayInterface::ArrayMethods
   include ::Array::Hooked::ArrayInterface::Undecorated
   include ::Array::Hooked::ArrayInterface::Hooks
   include ::Array::Hooked::ArrayInterface::WithoutHooks
   
-  include ::Enumerable
-
   extend ::Module::Cluster
   hooked_array_cluster = cluster( :hooked_array ).before_include
 

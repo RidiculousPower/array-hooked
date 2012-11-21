@@ -7,19 +7,37 @@ module ::Array::Hooked::ArrayInterface::WithoutHooks
 
   # Alias to #[] that bypasses hooks.
   #
-  # @param [Integer] index 
+  # @overload []( index )
   #
-  #        Index at which set is taking place.
+  #   @param [Integer] index 
+  #   
+  #          Index at which get is requested.
+  #
+  # @overload []( start, length )
+  #
+  #   @param [Integer] start 
+  #   
+  #          Index at which get slice begins.
+  #   
+  #   @param [Integer] length 
+  #   
+  #          Length of get.
+  #
+  # @overload []( range )
+  #
+  #   @param [Range] range 
+  #   
+  #          Range describing get slice.
   #
   # @return [Object] 
   #
   #         Element returned.
   #
-  def get_without_hooks( index )
+  def get_without_hooks( *args )
     
     @without_hooks = true
 
-    self[ index ] = object
+    object = self[ *args ]
     
     @without_hooks = false
     
@@ -34,23 +52,49 @@ module ::Array::Hooked::ArrayInterface::WithoutHooks
   ###
   # Alias to #[]= that bypasses hooks.
   #
-  # @param [Integer] index 
+  # @overload []( index, object )
   #
-  #        Index at which set is taking place.
+  #   @param [Integer] index 
+  #   
+  #          Index at which get is requested.
   #
-  # @param [Object] object 
+  #   @param [Object] object 
+  #   
+  #          Element being set.
   #
-  #        Element being set.
+  # @overload []( start, length, object )
+  #
+  #   @param [Integer] start 
+  #   
+  #          Index at which get slice begins.
+  #   
+  #   @param [Integer] length 
+  #   
+  #          Length of get.
+  #
+  #   @param [Object] object 
+  #   
+  #          Element being set.
+  #
+  # @overload []( range, object )
+  #
+  #   @param [Range] range 
+  #   
+  #          Range describing get slice.
+  #
+  #   @param [Object] object 
+  #   
+  #          Element being set.
   #
   # @return [Object] 
   #
   #         Element returned.
   #
-  def set_without_hooks( index, object )
+  def set_without_hooks( *args )
     
     @without_hooks = true
 
-    self[ index ] = object
+    self.[]=( *args )
     
     @without_hooks = false
     

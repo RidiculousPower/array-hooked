@@ -8,21 +8,47 @@ module ::Array::Hooked::ArrayInterface::Undecorated
   ###
   # Alias to original #[]= method. Used to perform actual set between hooks.
   #
-  # @param [Integer] index
-  # 
-  #        Index at which set is taking place.
+  # @overload []( index, object )
   #
-  # @param [Object] object 
+  #   @param [Integer] index 
+  #   
+  #          Index at which get is requested.
   #
-  #        Element being set.
+  #   @param [Object] object 
+  #   
+  #          Element being set.
+  #
+  # @overload []( start, length, object )
+  #
+  #   @param [Integer] start 
+  #   
+  #          Index at which get slice begins.
+  #   
+  #   @param [Integer] length 
+  #   
+  #          Length of get.
+  #
+  #   @param [Object] object 
+  #   
+  #          Element being set.
+  #
+  # @overload []( range, object )
+  #
+  #   @param [Range] range 
+  #   
+  #          Range describing get slice.
+  #
+  #   @param [Object] object 
+  #   
+  #          Element being set.
   #
   # @return [Object] 
   #
   #         Element set.
   #
-  def undecorated_set( index, value )
+  def undecorated_set( *args )
     
-    return @internal_array[ index ] = value
+    return @internal_array.[]=( *args )
     
   end
   
@@ -33,17 +59,47 @@ module ::Array::Hooked::ArrayInterface::Undecorated
   ###
   # Alias to original #[] method. Used to perform actual get between hooks.
   #
-  # @param [Integer] index 
+  # @overload []( index )
   #
-  #        Index at which get is requested.
+  #   @param [Integer] index 
+  #   
+  #          Index at which get is requested.
+  #
+  # @overload []( start, length )
+  #
+  #   @param [Integer] start 
+  #   
+  #          Index at which get slice begins.
+  #   
+  #   @param [Integer] length 
+  #   
+  #          Length of get.
+  #
+  # @overload []( range )
+  #
+  #   @param [Range] range 
+  #   
+  #          Range describing get slice.
   #
   # @return [Object] 
   #
   #         Element requested.
   #
-  def undecorated_get( index )
+  def undecorated_get( *args )
     
-    return @internal_array[ index ]
+    return_value = nil
+    
+    index = args[ 0 ]
+    length = args[ 1 ]
+    
+    if length or index.is_a?( ::Range )
+      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+      return_value.internal_array = @internal_array[ *args ]
+    else
+      return_value = @internal_array[ index ]
+    end
+    
+    return return_value
     
   end
 

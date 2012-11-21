@@ -60,7 +60,7 @@ module ::Array::Hooked::ArrayInterface::ClassInstance
             when ::Array::Hooked
               converted_object = attempted_conversion
             when ::Array
-              converted_object = self::WithoutInternalArray.new
+              converted_object = self::WithoutInternalArray.new( @configuration_instance )
               converted_object.internal_array = attempted_conversion
           end
         end
