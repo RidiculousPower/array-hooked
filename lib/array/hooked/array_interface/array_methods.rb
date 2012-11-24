@@ -509,7 +509,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     if index = index( object )
       return_value = delete_at( index )
-    else
+    elsif block_given?
       return_value = yield
     end
 
@@ -1342,8 +1342,13 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     clear
 
-    concat( other_array )
-
+#    concat( other_array )
+    other_array.each_with_index do |this_object, index|
+      unless self[ index ] == this_object
+       self[ index ] = this_object
+      end
+    end
+       
     return self
 
   end
@@ -1744,8 +1749,11 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   See also Enumerable#sort_by.
   #
   def sort!( & block )
-        
-    replace( @internal_array.sort( & block ) )
+    
+    sorted_array = @internal_array.sort( & block )
+    unless sorted_array == self
+      replace( sorted_array )
+    end
     
     return self
 

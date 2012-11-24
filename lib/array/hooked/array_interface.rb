@@ -39,10 +39,12 @@ module ::Array::Hooked::ArrayInterface
   #   corresponding method.
   #
   hooked_array_cluster.cascade_to( :class ) do |hooked_instance|
-    hooked_instance_subclass = ::Class.new( hooked_instance ) do
-      include ::Array::Hooked::ArrayInterface::WithoutInternalArray
+    unless hooked_instance.const_defined?( :WithoutInternalArray )
+      hooked_instance_subclass = ::Class.new( hooked_instance ) do
+        include ::Array::Hooked::ArrayInterface::WithoutInternalArray
+      end
+      hooked_instance.const_set( :WithoutInternalArray, hooked_instance_subclass )
     end
-    hooked_instance.const_set( :WithoutInternalArray, hooked_instance_subclass )
   end
 
   ################
