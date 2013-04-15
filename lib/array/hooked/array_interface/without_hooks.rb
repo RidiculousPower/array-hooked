@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 
 module ::Array::Hooked::ArrayInterface::WithoutHooks
 
@@ -679,11 +680,11 @@ module ::Array::Hooked::ArrayInterface::WithoutHooks
   #
   #         Self.
   #
-  def unshift_without_hooks( object )
+  def unshift_without_hooks( *objects )
 
     @without_hooks = true
 
-    unshift( object )
+    unshift( *objects )
     
     @without_hooks = false
     

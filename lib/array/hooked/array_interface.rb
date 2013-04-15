@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 
 module ::Array::Hooked::ArrayInterface
   
@@ -8,6 +9,7 @@ module ::Array::Hooked::ArrayInterface
   include ::Enumerable
   
   include ::Array::Hooked::ArrayInterface::ArrayMethods
+  include ::Array::Hooked::ArrayInterface::AdditionalMethods
   include ::Array::Hooked::ArrayInterface::Undecorated
   include ::Array::Hooked::ArrayInterface::Hooks
   include ::Array::Hooked::ArrayInterface::WithoutHooks
@@ -69,6 +71,26 @@ module ::Array::Hooked::ArrayInterface
     @configuration_instance = configuration_instance
         
     initialize_internal_array( *array_initialization_args, & block )
+    
+  end
+
+  ###############################
+  #  initialize_internal_array  #
+  ###############################
+  
+  ###
+  # @private
+  #
+  # Initialize internal Array instance. 
+  #
+  #   This method is separated out so that the self.class::WithoutInternalArray subclass
+  #   can override it (blanking it out). The result is that internally we can create a
+  #   new instance to return, and then create its internal Array instance using the internal
+  #   Array instance's corresponding method.
+  #
+  def initialize_internal_array( *array_initialization_args, & block )
+
+    @internal_array = ::Array.new( *array_initialization_args, & block )
     
   end
 
@@ -156,28 +178,4 @@ module ::Array::Hooked::ArrayInterface
   #
   attr_accessor :configuration_instance  
 
-  ######################################################################################################################
-      private ##########################################################################################################
-  ######################################################################################################################
-
-  ###############################
-  #  initialize_internal_array  #
-  ###############################
-  
-  ###
-  # @private
-  #
-  # Initialize internal Array instance. 
-  #
-  #   This method is separated out so that the self.class::WithoutInternalArray subclass
-  #   can override it (blanking it out). The result is that internally we can create a
-  #   new instance to return, and then create its internal Array instance using the internal
-  #   Array instance's corresponding method.
-  #
-  def initialize_internal_array( *array_initialization_args, & block )
-
-    @internal_array = ::Array.new( *array_initialization_args, & block )
-    
-  end
-  
 end

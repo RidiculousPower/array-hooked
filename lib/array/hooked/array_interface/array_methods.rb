@@ -1,5 +1,8 @@
+# -*- encoding : utf-8 -*-
 
 module ::Array::Hooked::ArrayInterface::ArrayMethods
+  
+  extend ::Forwardable
   
   ########
   #  ==  #
@@ -9,18 +12,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # Equality—Two arrays are equal if they contain the same number of elements and if each 
   #   element is equal to (according to Object.==) the corresponding element in the other array.
   # 
-  def ==( other_array )
-
-    compare_array = other_array
-    
-    case other_array
-      when ::Array::Hooked
-        compare_array = other_array.internal_array
-    end
-    
-    return @internal_array == compare_array
-
-  end
+  def_delegator :@internal_array, :==
 
   #########
   #  <=>  #
@@ -34,18 +26,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   “equal” according to Array#<=> if and only if they have the same length and the value of 
   #   each element is equal to the value of the corresponding element in the other array.
   #
-  def <=>( other_array )
-    
-    compare_array = other_array
-    
-    case other_array
-      when ::Array::Hooked
-        compare_array = other_array.internal_array
-    end
-    
-    return @internal_array <=> compare_array
-    
-  end
+  def_delegator :@internal_array, :<=>
   
   #######
   #  +  #
@@ -57,10 +38,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def +( other_array )
 
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array + other_array
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array + other_array
 
-    return result_array
+    return new_hooked_array
 
   end
   
@@ -74,10 +55,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def -( other_array )
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array - other_array
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array - other_array
 
-    return result_array
+    return new_hooked_array
 
   end
 
@@ -95,17 +76,14 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def *( integer_or_string )
     
-    return_value = nil
-    
-    case integer_or_string
+    return case integer_or_string
       when ::String
-        return_value = @internal_array * integer_or_string
+        @internal_array * integer_or_string
       when ::Integer
-        return_value = self.class::WithoutInternalArray.new( @configuration_instance )
-        return_value.internal_array = @internal_array * integer_or_string
+        new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+        new_hooked_array.internal_array = @internal_array * integer_or_string
+        new_hooked_array
     end
-    
-    return return_value
     
   end
 
@@ -119,15 +97,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def &( other_array )
     
-    case other_array
-      when ::Array::Hooked
-        other_array = other_array.internal_array
-    end
+    other_array = ::Array::Hooked === other_array ? other_array.internal_array : other_array
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array & other_array
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array & other_array
     
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -140,32 +115,13 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def |( other_array )
         
-    case other_array
-      when ::Array::Hooked
-        other_array = other_array.internal_array
-    end
+    other_array = ::Array::Hooked === other_array ? other_array.internal_array : other_array
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array | other_array
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array | other_array
     
-    return result_array
+    return new_hooked_array
     
-  end
-
-  ########
-  #  <<  #
-  ########
-  
-  ###
-  # Append—Pushes the given object on to the end of this array. This expression returns the array 
-  #   itself, so several appends may be chained together.
-  #
-  def <<( object )
-
-    insert( length, object )
-    
-    return self
-
   end
 
   ########
@@ -186,34 +142,15 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def []( *args )
     
-    index = nil
-    length = nil
     object = nil
 
     index = args[ 0 ]
-    
-    if args.length > 1
-      length = args[ 1 ]
-    end
+    length = args[ 1 ] if args.length > 1
 
-    should_get = true
-    
-    unless @without_hooks
-      should_get = pre_get_hook( index, length )
-    end
-    
-    if should_get
-      
-      if length
-        object = perform_get_between_hooks( index, length )
-      else
-        object = perform_get_between_hooks( index )
-      end
-      
-      unless @without_hooks
-        object = post_get_hook( index, object, length )
-      end
-      
+    if @without_hooks || pre_get_hook( index, length )
+      object = length ? perform_get_between_hooks( index, length ) 
+                      : perform_get_between_hooks( index )
+      object = post_get_hook( index, object, length ) unless @without_hooks
     end
     
     return object
@@ -242,28 +179,21 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def []=( *args )
 
-    index = nil
-    length = nil
     object = nil
 
     index = args[ 0 ]
-    
-    if args.length > 2
+    length = nil
+
+    if args.size == 1
+      object = args[ 1 ]
+    else
       length = args[ 1 ]
       object = args[ 2 ]
-    else
-      object = args[ 1 ]
     end
 
-    unless @without_hooks
-      object = pre_set_hook( index, object, false, length )
-    end
-    
+    object = pre_set_hook( index, object, false, length ) unless @without_hooks
     perform_set_between_hooks( *args )
-
-    unless @without_hooks
-      object = post_set_hook( index, object, false, length )
-    end
+    object = post_set_hook( index, object, false, length ) unless @without_hooks
 
     return object
 
@@ -289,11 +219,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   
   #   See also Array#rassoc.
   #
-  def assoc( object )
-
-    return @internal_array.assoc( object )
-
-  end
+  def_delegator :@internal_array, :assoc
 
   ########
   #  at  #
@@ -330,17 +256,15 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   If no block is given, an enumerator is returned instead.
   #
   def collect( & block )
-
-    return_value = nil
+    
+    new_hooked_array = nil
     
     if block_given?
-      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
-      return_value.internal_array = @internal_array.collect( & block )
-    else
-      return_value = to_enum( __method__ )
+      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array.internal_array = @internal_array.collect( & block )
     end
 
-    return return_value
+    return new_hooked_array || to_enum( __method__ )
 
   end
 
@@ -357,10 +281,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     return to_enum unless block_given?
 
-    self.each_with_index do |this_object, index|
-      replacement_object = yield( this_object )
-      self[ index ] = replacement_object
-    end
+    each_with_index { |this_object, index| self[ index ] = yield( this_object ) }
 
     return self
 
@@ -378,15 +299,15 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def combination( number, & block )
     
-    return_value = self
+    enumerator = nil
     
     if block_given?
       @internal_array.combination( number, & block )
     else
-      return_value = to_enum( __method__ )
+      enumerator = to_enum( __method__ )
     end
     
-    return return_value
+    return enumerator || self
 
   end
 
@@ -399,10 +320,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def compact
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array.compact
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.compact
     
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -415,9 +336,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def compact!
 
-    return keep_if do |object|
-      object != nil
-    end
+    return delete_if { |object| object.nil? }
 
   end
 
@@ -430,9 +349,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def concat( *arrays )
     
-    arrays.each do |this_array|
-      push( *this_array )
-    end
+    arrays.each { |this_array| push( *this_array ) }
 
     return self
     
@@ -447,22 +364,14 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   which equals to obj. If a block is given, counts the number of elements yielding a 
   #   true value.
   #
-  def count( object = nil, & block )
+  def count( *args, & block )
     
-    return_count = nil
-    
-    if object
-      
-      return_count = @internal_array.count( object )
-      
-    elsif block_given?
-      
-      return_count = @internal_array.count( & block )
-      
+    return_count = if block_given?
+      @internal_array.count( & block )
+    elsif args.empty?
+      @internal_array.count
     else
-
-      return_count = @internal_array.count
-      
+      @internal_array.count( *args )
     end
     
     return return_count
@@ -481,15 +390,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def cycle( number, & block )
     
-    return_value = self
+    enumerator = nil
     
-    if block_given?
-      @internal_array.cycle( number, & block )
-    else
-      return_value = to_enum( __method__ )
-    end
+    block_given? ? @internal_array.cycle( number, & block ) 
+                 : enumerator = to_enum( __method__ )
     
-    return return_value
+    return enumerator || self
     
   end
 
@@ -505,15 +411,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def delete( object, & block )
 
-    return_value = nil
-
-    if index = index( object )
-      return_value = delete_at( index )
-    elsif block_given?
-      return_value = yield
-    end
-
-    return return_value
+    return ( index = index( object ) ) ? delete_at( index ) 
+                                       : block_given? ? yield : nil
 
   end
 
@@ -525,41 +424,6 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # 
   #
   alias_method :hooked_delete, :delete
-
-  ####################
-  #  delete_objects  #
-  ####################
-
-  ###
-  # Delete more than one object at a time.
-  #
-  # @overload delete_objects( object, ... )
-  #
-  #   @param object Object to delete.
-  #
-  # @return [Array<Object>] 
-  #
-  #         Deleted objects.
-  #
-  def delete_objects( *objects )
-
-    return_value = nil
-
-    indexes = [ ]
-    objects.each do |this_object|
-      this_index = index( this_object )
-      if this_index
-        indexes.push( this_index )
-      end
-    end
-
-    unless indexes.empty?
-      return_value = delete_at_indexes( *indexes )
-    end
-
-    return return_value
-
-  end
 
   ###############
   #  delete_at  #
@@ -573,20 +437,9 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     deleted_object = nil
 
-    if @without_hooks
-      pre_delete_hook_result = true
-    else
-      pre_delete_hook_result = pre_delete_hook( index )
-    end
-    
-    if pre_delete_hook_result
-      
+    if @without_hooks || pre_delete_hook( index )
       deleted_object = perform_delete_at_between_hooks( index )
-
-      unless @without_hooks
-        deleted_object = post_delete_hook( index, deleted_object )
-      end
-
+      deleted_object = post_delete_hook( index, deleted_object ) unless @without_hooks
     end
 
     return deleted_object
@@ -601,39 +454,6 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # 
   #
   alias_method :hooked_delete_at, :delete_at
-
-  #######################
-  #  delete_at_indexes  #
-  #######################
-  
-  ###
-  # Perform delete_at on multiple indexes.
-  #
-  # @overload delete_at_indexes( index, ... )
-  #
-  #   @param [Integer] index
-  #
-  #          Index that should be deleted.
-  #
-  # @return [Array<Object>]
-  #
-  #         Objects deleted.
-  #
-  def delete_at_indexes( *indexes )
-
-    indexes = indexes.sort.uniq.reverse
-
-    deleted_objects = [ ]
-    indexes.each do |this_index|
-      deleted_objects.push( delete_at( this_index ) )
-    end
-
-    return_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    return_array.internal_array = deleted_objects.reverse
-    
-    return return_array
-
-  end
 
   ###############
   #  delete_if  #
@@ -650,14 +470,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     return to_enum unless block_given?
 
     indexes = [ ]
-
-    self.each_with_index do |this_object, index|
-      if yield( this_object )
-        indexes.push( index )
-      end
-    end
-
-    delete_at_indexes( *indexes )
+    self.each_with_index { |this_object, index| indexes.push( index ) if yield( this_object ) }
+    delete_at_indexes( *indexes ) unless indexes.empty?
 
     return self
 
@@ -671,10 +485,11 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # Drops first n elements from ary and returns the rest of the elements in an array.
   #
   def drop( number )
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array.drop( number )
+    
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.drop( number )
   
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -689,16 +504,14 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def drop_while( & block )
 
-    return_value = nil
+    new_hooked_array = nil
     
     if block_given?
-      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
-      return_value.internal_array = @internal_array.drop_while( & block )
-    else
-      return_value = to_enum( __method__ )
+      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array.internal_array = @internal_array.drop_while( & block )
     end
     
-    return return_value
+    return new_hooked_array || to_enum( __method__ )
 
   end
 
@@ -712,15 +525,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def each( & block )
 
-    return_value = self
+    enumerator = nil
     
-    if block_given?
-      @internal_array.each( & block )
-    else
-      return_value = to_enum( __method__ )
-    end
+    block_given? ? @internal_array.each( & block )
+                 : enumerator = to_enum( __method__ )
     
-    return return_value
+    return enumerator || self
 
   end
 
@@ -734,15 +544,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def each_index( & block )
 
-    return_value = self
+    enumerator = nil
     
-    if block_given?
-      @internal_array.each_index( & block )
-    else
-      return_value = to_enum( __method__ )
-    end
+    block_given? ? @internal_array.each_index( & block )
+                 : enumerator = to_enum( __method__ )
     
-    return return_value
+    return enumerator || self
 
   end
 
@@ -768,14 +575,9 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def eql?( other_object )
 
-    compare_object = other_object
-    
-    case compare_object
-      when ::Array::Hooked
-        compare_object = compare_object.internal_array
-    end
+    compare_object = ::Array::Hooked === other_object ? other_object.internal_array : other_object
    
-   return super || @internal_array.eql?( compare_object )
+   return super( compare_object ) || @internal_array.eql?( compare_object )
     
   end
 
@@ -791,14 +593,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def fetch( index, default = nil, & block )
     
-    result_value = nil
-    
-    if default
-      result_value = @internal_array.fetch( index, default )
-    elsif block_given?
-      result_value = @internal_array.fetch( index, & block )
+    result_value = if block_given?
+      @internal_array.fetch( index, & block )
+    elsif default
+      @internal_array.fetch( index, default )
     else
-      result_value = @internal_array.fetch( index )
+      @internal_array.fetch( index )
     end
     
     return result_value
@@ -835,14 +635,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def find_index( object = nil, & block )
     
-    return_value = nil
-    
-    if block_given?
-      return_value = @internal_array.find_index( & block )
+    return_value = if block_given?
+      @internal_array.find_index( & block )
     elsif object
-      return_value = @internal_array.find_index( object )
+      @internal_array.find_index( object )
     else
-      return_value = to_enum( __method__ )
+      to_enum( __method__ )
     end
 
     return return_value
@@ -873,15 +671,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def first( number = nil )
     
-    return_value = nil
-    
-    if number
-      return_value = self[ 0, number ]
-    else
-      return_value = self[ 0 ]
-    end
-    
-    return return_value
+    return number ? self[ 0, number ] 
+                  : self[ 0 ]
     
   end
 
@@ -896,10 +687,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def flatten( level = 1 )
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array.flatten( level )
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.flatten( level )
     
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -913,25 +704,11 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def flatten!( level = 1 )
 
-    indexes = [ ]
-
     level.times do |this_time|
-
-      self.each_with_index do |this_object, this_index|
-        if this_object.is_a?( ::Array )
-          indexes.push( this_index )
-        end
-      end
-
-      unless indexes.empty?
-        indexes.sort!.reverse!
-        indexes.each do |this_index|
-          this_array = delete_at( this_index )
-          insert( this_index, *this_array )
-        end
-        indexes.clear
-      end
-      
+      this_index = size - 1
+      begin
+        insert( this_index, *delete_at( this_index ) ) if ::Array === self[ this_index ]
+      end while ( this_index -= 1 ) >= 0
     end
 
     return self
@@ -979,11 +756,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # Returns true if the given object is present in self (that is, if any object == anObject), 
   #   false otherwise.
   #
-  def include?( object )
-    
-    return @internal_array.include?( object )
-    
-  end
+  def_delegator :@internal_array, :include?
 
   #############
   #  inspect  #
@@ -994,11 +767,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # 
   #   Also aliased as: #to_s.
   #
-  def inspect
-    
-    return @internal_array.to_s
-    
-  end
+  def_delegator :@internal_array, :inspect
 
   ##########
   #  join  #
@@ -1007,11 +776,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   ###
   # Returns a string created by converting each element of the array to a string, separated by sep.
   #
-  def join( separator = $, )
-    
-    return @internal_array.join( separator )
-    
-  end
+  def_delegator :@internal_array, :join
 
   #############
   #  keep_if  #
@@ -1023,27 +788,17 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def keep_if( & block )
     
-    return_value = self
-    
-    indexes = [ ]
+    enumerator = nil
     
     if block_given?
-      
-      self.each_with_index do |this_object, index|
-        unless yield( this_object )
-          indexes.push( index )
-        end
-      end
-
+      indexes = [ ]
+      self.each_with_index { |this_object, index| indexes.push( index ) unless yield( this_object ) }
       delete_at_indexes( *indexes )
-    
     else
-      
-      return_value = to_enum( __method__ )
-      
+      enumerator = to_enum( __method__ )
     end
 
-    return return_value
+    return enumerator || self
 
   end
 
@@ -1054,17 +809,9 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   ###
   # Returns the last element(s) of self. If the array is empty, the first form returns nil.
   #
-  def last( number = nil )
+  def last( length = nil )
     
-    return_value = nil
-    
-    if number
-      return_value = self[ -number, number ]
-    else
-      return_value = self[ -1 ]
-    end
-    
-    return return_value
+    return length ? self[ -length, length ] : self[ -1 ]
     
   end
 
@@ -1137,15 +884,15 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def permutation( number = nil, & block )
     
-    return_value = self
+    enumerator = nil
     
     if block_given?
       @internal_array.permutation( number, & block )
     else
-      return_value = to_enum( __method__ )
+      enumerator = to_enum( __method__ )
     end
     
-    return return_value
+    return enumerator || self
 
   end
 
@@ -1160,15 +907,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def pop( number = nil )
     
-    return_value = nil
-    
-    if number
-      return_value = slice!( length - number, number )
-    else
-      return_value = delete_at( length - 1 )
-    end
-    
-    return return_value
+    return number ? slice!( length - number, number )
+                  : delete_at( length - 1 )
 
   end
 
@@ -1183,16 +923,13 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def product( *other_arrays, & block )
     
-    return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
     other_arrays.each_with_index do |this_array, this_index|
-      case this_array
-        when ::Array::Hooked
-          other_arrays[ this_index ] = this_array.internal_array
-      end
+      other_arrays[ this_index ] = this_array.internal_array if ::Array::Hooked === this_array
     end
-    return_value.internal_array = @internal_array.product( *other_arrays, & block )
+    new_hooked_array.internal_array = @internal_array.product( *other_arrays, & block )
     
-    return return_value
+    return new_hooked_array
     
   end
 
@@ -1219,11 +956,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   element of each contained array using ==. Returns the first contained array that matches. 
   #   See also Array#assoc.
   #
-  def rassoc( object )
-    
-    return @internal_array.rassoc( object )
-    
-  end
+  def_delegator :@internal_array, :rassoc
 
   ############
   #  reject  #
@@ -1236,16 +969,16 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def reject( & block )
     
-    result_array = nil
+    new_hooked_array = nil
     
     if block_given?
-      result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-      result_array.internal_array = @internal_array.reject( & block )
+      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array.internal_array = @internal_array.reject( & block )
     else
-      result_array = to_enum( __method__ )
+      new_hooked_array = to_enum( __method__ )
     end
     
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -1263,23 +996,11 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     return to_enum unless block_given?
     
-    return_value = nil
+    changed = nil
 
-    deleted_objects = 0
+    delete_if { |this_object| yield( this_object ) ? changed = true : false }
 
-    iteration_dup = dup
-    iteration_dup.each_with_index do |this_object, index|
-      if yield( this_object )
-        delete_at( index - deleted_objects )
-        deleted_objects += 1
-      end
-    end
-
-    if deleted_objects > 0
-      return_value = self
-    end
-
-    return return_value
+    return changed ? self : nil
 
   end
 
@@ -1295,15 +1016,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def repeated_combination( number, & block )
 
-    return_value = self
+    enumerator = nil
     
-    if block_given?
-      @internal_array.repeated_combination( number, & block )
-    else
-      return_value = to_enum( __method__ )
-    end
+    block_given? ? @internal_array.repeated_combination( number, & block )
+                 : enumerator = to_enum( __method__ )
     
-    return return_value
+    return enumerator || self
 
   end
 
@@ -1319,15 +1037,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def repeated_permutation( number, & block )
 
-    return_value = self
+    enumerator = self
     
-    if block_given?
-      @internal_array.repeated_permutation( number, & block )
-    else
-      return_value = to_enum( __method__ )
-    end
+    block_given? ? @internal_array.repeated_permutation( number, & block )
+                 : enumerator = to_enum( __method__ )
     
-    return return_value
+    return enumerator || self
 
   end
 
@@ -1341,13 +1056,8 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   def replace( other_array )
 
     clear
-
-#    concat( other_array )
-    other_array.each_with_index do |this_object, index|
-      unless self[ index ] == this_object
-       self[ index ] = this_object
-      end
-    end
+    
+    concat( other_array )
        
     return self
 
@@ -1362,24 +1072,20 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def insert( index, *objects )
 
-    index = filter_insert_objects( index, objects )
+    if index = filter_insert_indexes( index, objects ) and
+       index = filter_insert_objects( index, objects )
+    
+      perform_insert_between_hooks( index, *objects )
 
-    unless @without_hooks
-      objects.each_with_index do |this_object, this_index|
-        this_object = pre_set_hook( index + this_index, this_object, true )
-        objects[ this_index ] = this_object
-      end
+      unless @without_hooks
+        length = objects.size
+        this_time = -1
+        objects.collect! { |this_object| post_set_hook( this_time += 1, this_object, true, length ) }
+      end 
+
     end
-
-    perform_insert_between_hooks( index, *objects )
-
-    unless @without_hooks
-      objects.each_with_index do |this_object, this_index|
-        objects[ this_index ] = post_set_hook( index + this_index, this_object, true )
-      end
-    end
-
-    return objects
+    
+    return self
 
   end
   
@@ -1392,6 +1098,20 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   alias_method :hooked_insert, :insert
 
+  ########
+  #  <<  #
+  ########
+  
+  ###
+  # Append—Pushes the given object on to the end of this array. This expression returns the array 
+  #   itself, so several appends may be chained together.
+  #
+  def <<( object )
+    
+    return insert( size, object )
+    
+  end
+
   #############
   #  reverse  #
   #############
@@ -1401,10 +1121,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def reverse
 
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array.reverse
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.reverse
 
-    return result_array
+    return new_hooked_array
 
   end
   
@@ -1432,15 +1152,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def reverse_each( & block )
     
-    return_value = self
+    enumerator = nil
     
-    if block_given?
-      @internal_array.reverse_each( & block )
-    else
-      return_value = to_enum( __method__ )
-    end
+    block_given? ? @internal_array.reverse_each( & block )
+                 : enumerator = to_enum( __method__ )
     
-    return return_value
+    return enumerator || self
     
   end
 
@@ -1456,14 +1173,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def rindex( object = nil, & block )
 
-    return_value = nil
-    
-    if object
-      return_value = @internal_array.rindex( object )
-    elsif block_given?
-      return_value = @internal_array.rindex( & block )
+    return_value = if block_given?
+      @internal_array.rindex( & block )
+    elsif object
+      @internal_array.rindex( object )
     else
-      return_value = to_enum( __method__ )
+      to_enum( __method__ )
     end
     
     return return_value
@@ -1480,10 +1195,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def rotate( rotate_count = 1 )
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array.rotate( rotate_count )
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.rotate( rotate_count )
     
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -1497,9 +1212,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def rotate!( rotate_count = 1 )
 
-    rotated_array = @internal_array.rotate( rotate_count )
-
-    replace( rotated_array )
+    replace( @internal_array.rotate( rotate_count ) )
 
     return self
 
@@ -1516,11 +1229,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   form returns nil and the second form returns an empty array.
   #   If rng is given, it will be used as the random number generator.
   #
-  def sample( *args )
-    
-    return @internal_array.sample( *args )
-    
-  end
+  def_delegator :@internal_array, :sample
 
   ############
   #  select  #
@@ -1533,16 +1242,14 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def select( & block )
     
-    return_value = nil
+    new_hooked_array = nil
     
     if block_given?
-      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
-      return_value.internal_array = @internal_array.select( & block )
-    else
-      return_value = to_enum( __method__ )
+      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array.internal_array = @internal_array.select( & block )
     end
     
-    return return_value
+    return new_hooked_array || to_enum( __method__ )
     
   end
 
@@ -1560,14 +1267,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     return to_enum unless block_given?
 
-    deleted_objects = 0
-
-    dup.each_with_index do |this_object, index|
-      unless yield( this_object )
-        delete_at( index - deleted_objects )
-        deleted_objects += 1
-      end
-    end
+    delete_if { |this_object| ! yield( this_object ) }
 
     return self
 
@@ -1585,15 +1285,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def shift( number = nil )
     
-    object = nil
-    
-    if number
-      object = slice( 0, number )
-    else
-      object = delete_at( 0 )
-    end
-    
-    return object
+    return number ? slice( 0, number ) : delete_at( 0 )
 
   end
 
@@ -1607,15 +1299,12 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def shuffle( random_number_generator = nil )
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_internal_array = random_number_generator ? @internal_array.shuffle( random: random_number_generator )
+                                                 : @internal_array.shuffle
+    new_hooked_array.internal_array = new_internal_array
     
-    if random_number_generator
-      result_array.internal_array = @internal_array.shuffle( random: random_number_generator )
-    else
-      result_array.internal_array = @internal_array.shuffle
-    end
-    
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -1627,7 +1316,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   # Shuffles elements in self in place. If rng is given, it will be used as the random number generator.
   #
   def shuffle!( random_number_generator = nil )
-
+    
+    # We aren't really adding or deleting, only moving.
+    # We don't have move hooks, so we simply shuffle the internal array.
+    # This may cause confusion with compositing arrays, but we can handle that there.
     @internal_array.shuffle!( random: random_number_generator )
 
     return self
@@ -1655,17 +1347,11 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def slice( index_start_or_range, slice_length = nil )
     
-    if slice_length
-      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
-      return_value.internal_array = @internal_array.slice( index_start_or_range, slice_length )
-    elsif index_start_or_range.is_a?( ::Range )
-      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
-      return_value.internal_array = @internal_array.slice( index_start_or_range )
-    else
-      return_value = @internal_array.slice( index_start_or_range )
-    end
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = slice_length ? @internal_array.slice( index_start_or_range, slice_length )
+                                                   : @internal_array.slice( index_start_or_range )
     
-    return return_value
+    return new_hooked_array
     
   end
 
@@ -1684,38 +1370,25 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     start_index = nil
     end_index = nil
 
-    if index_start_or_range.is_a?( ::Range )
-
+    if ::Range === index_start_or_range
       start_index = index_start_or_range.begin
       end_index = index_start_or_range.end
-
     elsif slice_length
-
       start_index = index_start_or_range
       end_index = index_start_or_range + slice_length
-    
     else
-      
       start_index = index_start_or_range
-      
     end
 
-    if end_index
-
+    slice = if end_index
       indexes = [ ]
-
       ( end_index - start_index ).times do |this_time|
         indexes.push( end_index - this_time - 1 )
       end
-      
-      slice = delete_at_indexes( *indexes )
-
+      delete_at_indexes( *indexes )
     else
-
-      slice = delete_at( start_index )
-
+      delete_at( start_index )
     end
-
 
     return slice
 
@@ -1732,10 +1405,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def sort( & block )
     
-    return_value = self.class::WithoutInternalArray.new( @configuration_instance )
-    return_value.internal_array = @internal_array.sort( & block )
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.sort( & block )
     
-    return return_value
+    return new_hooked_array
     
   end
 
@@ -1750,10 +1423,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def sort!( & block )
     
-    sorted_array = @internal_array.sort( & block )
-    unless sorted_array == self
-      replace( sorted_array )
-    end
+    @internal_array.sort!( & block )
     
     return self
 
@@ -1772,11 +1442,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     return to_enum unless block_given?
 
-    sorted_array = sort_by( & block )
-
-    unless sorted_array == self
-      replace( sorted_array )
-    end
+    @internal_array.sort_by!( & block )
 
     return self
 
@@ -1806,16 +1472,14 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def take_while( & block )
     
-    return_value = self
+    new_hooked_array = nil
     
     if block_given?
-      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
-      return_value.internal_array = @internal_array.take_while( & block )
-    else
-      return_value = to_enum( __method__ )
+      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array.internal_array = @internal_array.take_while( & block )
     end
     
-    return return_value
+    return new_hooked_array || to_enum( __method__ )
     
   end
 
@@ -1824,7 +1488,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   ##########
   
   ###
-  # Returns self.
+  # Returns internal Array instance.
   #
   def to_a
     
@@ -1837,7 +1501,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   ############
   
   ###
-  # Returns self.
+  # Returns internal Array instance.
   #
   def to_ary
     
@@ -1863,10 +1527,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def transpose
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array.transpose
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.transpose
     
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -1880,10 +1544,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def uniq( & block )
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array.uniq( & block )
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.uniq( & block )
     
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -1910,9 +1574,9 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   ###
   # Prepends objects to the front of self, moving other elements upwards.
   #
-  def unshift( object )
+  def unshift( *objects )
 
-    insert( 0, object )
+    insert( 0, *objects )
 
     return self
 
@@ -1928,10 +1592,10 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def values_at( *selectors )
     
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array.values_at( *selectors )
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.values_at( *selectors )
     
-    return result_array
+    return new_hooked_array
     
   end
 
@@ -1948,38 +1612,21 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def zip( *other_arrays, & block )
     
-    result_array = nil
+    other_arrays.collect! { |this_array| ::Array::Hooked === this_array ? this_array.internal_array : this_array }
+    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array.internal_array = @internal_array.zip( *other_arrays )    
+    yield if block_given?
     
-    other_arrays.each_with_index do |this_array, this_index|
-      case this_array
-        when ::Array::Hooked
-          other_arrays[ this_index ] = this_array.internal_array
-      end
-    end
-
-    result_array = self.class::WithoutInternalArray.new( @configuration_instance )
-    result_array.internal_array = @internal_array.zip( *other_arrays )
-    
-    if block_given?
-      yield
-    end
-    
-    return result_array
+    return new_hooked_array
     
   end
-
-  ######################################################################################################################
-      private ##########################################################################################################
-  ######################################################################################################################
 
   ###########################
   #  filter_insert_objects  #
   ###########################
   
   ###
-  # Filter objects provided by request for insert. Existing filtering
-  #   corrects for inserts beyond the last existing index by adding nils
-  #   to the objects array. Explicit nils make a number of situations easier.
+  # Filter objects provided by request for insert. 
   #
   # @param [Integer] index 
   #
@@ -1995,160 +1642,14 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def filter_insert_objects( index, objects )
     
-    # if we have less elements in self than the index we are inserting at
-    # we need to make sure the nils inserted cascade
-    if index > length
-      nils_created = index - length
-      index -= nils_created
-      nils_created.times do |this_time|
-        objects.unshift( nil )
-      end
+    unless @without_hooks
+      this_time = -1
+      length = objects.size
+      objects.collect! { |this_object| pre_set_hook( this_time += 1, this_object, true, length ) }
     end
 
     return index
     
   end
 
-  ###############################
-  #  perform_get_between_hooks  #
-  ###############################
-  
-  ###
-  # Performs actual retrieval (#[]) of index between calling hooks.
-  #   Separated for overriding in subclasses.
-  #
-  # @param [Integer] index 
-  #
-  #        Index where insert was requested.
-  #
-  # @return [Object]
-  #
-  #         Object at index.
-  #
-  def perform_get_between_hooks( *args )
-    
-    return undecorated_get( *args )
-    
-  end
-
-  ###############################
-  #  perform_set_between_hooks  #
-  ###############################
-  
-  ###
-  # Performs actual set (#[]=) at index between calling hooks.
-  #   Separated for overriding in subclasses.
-  #
-  # @param [Integer] index 
-  #
-  #        Index where insert was requested.
-  #
-  # @param [Object] object 
-  #
-  #        Object to set at index.
-  #
-  # @return [Object]
-  #
-  #         Object at index.
-  #
-  def perform_set_between_hooks( *args )
-    
-    undecorated_set( *args )
-    
-    return true
-    
-  end
-
-  ##################################
-  #  perform_insert_between_hooks  #
-  ##################################
-  
-  ###
-  # Performs actual insert (#insert) at index between calling hooks.
-  #   Separated for overriding in subclasses.
-  #
-  # @overload perform_insert_between_hooks( index, object, ... )
-  #
-  #   @param [Integer] index 
-  #   
-  #          Index where insert was requested.
-  #   
-  #   @param [Object] object 
-  #   
-  #          Object to set at index.
-  #
-  # @return [Object]
-  #
-  #         Object at index.
-  #
-  def perform_insert_between_hooks( index, *objects )
-    
-    first_index = index
-    
-    current_index = index
-    
-    objects.each do |this_object|
-      # if we get nil back thats an insert did not happen
-      if index = perform_single_object_insert_between_hooks( index, this_object )
-        index += 1
-        current_index = index
-      else
-        index = current_index
-      end
-    end
-    
-    return first_index
-    
-  end
-
-  ################################################
-  #  perform_single_object_insert_between_hooks  #
-  ################################################
-  
-  ###
-  # Performs actual insert (#insert) of single object at index between calling hooks.
-  #   Separated for overriding in subclasses.
-  #
-  # @param [Integer] index 
-  # 
-  #        Index where insert was requested.
-  # 
-  # @param [Object] object 
-  # 
-  #        Object to set at index.
-  #
-  # @return [Integer]
-  #
-  #         Index where insert occurred.
-  #
-  def perform_single_object_insert_between_hooks( index, object )
-    
-    undecorated_insert( index, object )
-    
-    return index
-    
-  end
-  
-  #####################################
-  #  perform_delete_at_between_hooks  #
-  #####################################
-  
-  ###
-  # Performs actual delete (#delete_at) at index between calling hooks.
-  #   Separated for overriding in subclasses.
-  #
-  # @param [Integer] index 
-  #
-  #        Index where insert was requested.
-  #
-  # @return [Object]
-  #
-  #         Object deleted at index.
-  #
-  def perform_delete_at_between_hooks( index )
-
-    return undecorated_delete_at( index )
-    
-  end
-  
 end

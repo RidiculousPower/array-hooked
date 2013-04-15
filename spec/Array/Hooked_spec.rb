@@ -1,3 +1,4 @@
+# -*- encoding : utf-8 -*-
 
 require_relative '../../lib/array-hooked.rb'
 
@@ -1078,6 +1079,23 @@ describe ::Array::Hooked do
     hooked_array.replace( [ :D, :E, :F ] )
     hooked_array.should == [ :D, :E, :F ]
   end
+  
+  ###########################
+  #  filter_insert_indexes  #
+  ###########################
+  
+  context '#filter_insert_indexes' do
+    let( :hooked_array ) { ::Array::Hooked.new( nil, [ :A, :B, :C ] ) }
+    let( :objects ) { [ 1, 2, 3, 4 ] }
+    it 'will filter indexes beyond size and insert nil(s), adjusting index to bounds' do
+      hooked_array.filter_insert_indexes( 5, objects )
+      objects.should == [ nil, nil, 1, 2, 3, 4 ]
+    end
+    it 'will filter indexes beyond -size and insert nil(s), adjusting index to bounds' do
+      hooked_array.filter_insert_indexes( -5, objects )
+      objects.should == [ 1, 2, 3, 4, nil, nil ]
+    end
+  end
 
   ############
   #  insert  #
@@ -1663,7 +1681,7 @@ describe ::Array::Hooked do
       end
     end
     hooked_array = ::Array::Hooked::SubMockPostSet.new
-    hooked_array.push( :some_value ).should == [ :some_other_value ]
+    hooked_array.push( :some_value )
     hooked_array.should == [ :some_value ]
   end
 
