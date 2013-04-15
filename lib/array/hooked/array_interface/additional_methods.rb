@@ -238,5 +238,36 @@ module ::Array::Hooked::ArrayInterface::AdditionalMethods
     return index
     
   end
+
+  ###########################
+  #  filter_insert_objects  #
+  ###########################
+  
+  ###
+  # Filter objects provided by request for insert. 
+  #
+  # @param [Integer] index 
+  #
+  #        Index where insert was requested.
+  #
+  # @param [Array<Object>] objects 
+  #
+  #        Objects passed to #insert.
+  #
+  # @return [Integer] 
+  #
+  #         Resulting index from filtered modifications.
+  #
+  def filter_insert_objects( index, objects )
+    
+    unless @without_hooks
+      this_time = -1
+      length = objects.size
+      objects.collect! { |this_object| pre_set_hook( this_time += 1, this_object, true, length ) }
+    end
+
+    return index
+    
+  end
   
 end
