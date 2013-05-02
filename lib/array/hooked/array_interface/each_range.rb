@@ -30,7 +30,7 @@ module ::Array::Hooked::ArrayInterface::EachRange
     end
     
     # copy parent => local to local => parent as appropriate
-    number_of_indexes_modified = range_end - range_start
+    number_of_indexes_modified = range_end - range_start + 1
     number_of_indexes_modified.times do |this_time|
       this_index = range_start + this_time
       this_object = self[ this_index ]
