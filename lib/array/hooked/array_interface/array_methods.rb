@@ -470,7 +470,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     return to_enum unless block_given?
 
     indexes = [ ]
-    self.each_with_index { |this_object, index| indexes.push( index ) if yield( this_object ) }
+    each_with_index { |this_object, index| indexes.push( index ) if yield( this_object ) }
     delete_at_indexes( *indexes ) unless indexes.empty?
 
     return self
@@ -792,7 +792,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     
     if block_given?
       indexes = [ ]
-      self.each_with_index { |this_object, index| indexes.push( index ) unless yield( this_object ) }
+      each_with_index { |this_object, index| indexes.push( index ) unless yield( this_object ) }
       delete_at_indexes( *indexes )
     else
       enumerator = to_enum( __method__ )
@@ -1171,14 +1171,14 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #   if no match is found. See also Array#index.
   #   If neither block nor argument is given, an enumerator is returned instead.
   #
-  def rindex( object = nil, & block )
+  def rindex( object = @internal_array, & block )
 
     return_value = if block_given?
       @internal_array.rindex( & block )
-    elsif object
-      @internal_array.rindex( object )
-    else
+    elsif object.equal?( @internal_array )
       to_enum( __method__ )
+    else
+      @internal_array.rindex( object )
     end
     
     return return_value

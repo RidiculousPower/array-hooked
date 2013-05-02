@@ -225,12 +225,13 @@ module ::Array::Hooked::ArrayInterface::AdditionalMethods
 
     # if we have less elements in self than the index we are inserting at
     # we need to make sure the nils inserted cascade
-    if index > size
-      nils_created = index - size
+    element_count = size
+    if index > element_count
+      nils_created = index - element_count
       index -= nils_created
       nils_created.times { |this_time| objects.unshift( nil ) }
-    elsif -index > length
-      nils_created = -index - length
+    elsif -index > element_count
+      nils_created = -index - element_count
       index += nils_created
       nils_created.times { |this_time| objects.push( nil ) }
     end
@@ -262,8 +263,8 @@ module ::Array::Hooked::ArrayInterface::AdditionalMethods
     
     unless @without_hooks
       this_time = -1
-      length = objects.size
-      objects.collect! { |this_object| pre_set_hook( this_time += 1, this_object, true, length ) }
+      element_count = objects.size
+      objects.collect! { |this_object| pre_set_hook( this_time += 1, this_object, true, element_count ) }
     end
 
     return index
