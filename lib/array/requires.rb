@@ -13,6 +13,7 @@ files = [
   'array_interface/undecorated',
   'array_interface/without_hooks',
   'array_interface/without_internal_array',
+  'array_interface/each_range',
   'array_interface',
   
   'exception/index_offset_error'

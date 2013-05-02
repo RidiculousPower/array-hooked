@@ -13,6 +13,7 @@ module ::Array::Hooked::ArrayInterface
   include ::Array::Hooked::ArrayInterface::Undecorated
   include ::Array::Hooked::ArrayInterface::Hooks
   include ::Array::Hooked::ArrayInterface::WithoutHooks
+  include ::Array::Hooked::ArrayInterface::EachRange
   
   extend ::Module::Cluster
   hooked_array_cluster = cluster( :hooked_array ).before_include
