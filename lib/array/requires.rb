@@ -2,22 +2,20 @@
 
 require 'forwardable'
 
-basepath = 'hooked'
+[
 
-files = [
+  '../../lib_ext/array',
   
-  'array_interface/class_instance',
-  'array_interface/array_methods',
-  'array_interface/additional_methods',
-  'array_interface/hooks',
-  'array_interface/undecorated',
-  'array_interface/without_hooks',
-  'array_interface/without_internal_array',
-  'array_interface/each_range',
-  'array_interface',
+  'hooked/array_interface/class_instance',
+  'hooked/array_interface/array_methods',
+  'hooked/array_interface/additional_methods',
+  'hooked/array_interface/hooks',
+  'hooked/array_interface/undecorated',
+  'hooked/array_interface/without_hooks',
+  'hooked/array_interface/without_internal_array',
+  'hooked/array_interface/each_range',
+  'hooked/array_interface',
   
-  'exception/index_offset_error'
+  'hooked/exception/index_offset_error'
   
-]
-
-files.each { |this_file| require_relative( ::File.join( basepath, this_file ) << '.rb' ) }
+].each { |this_file| require_relative( this_file << '.rb' ) }
