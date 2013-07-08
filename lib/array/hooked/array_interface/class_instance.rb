@@ -2,6 +2,27 @@
 
 module ::Array::Hooked::ArrayInterface::ClassInstance
   
+  ################################
+  #  new_without_internal_array  #
+  ################################
+
+  ###
+  # Create Array::Hooked instance with reference to a configuration instance but without internal array.
+  #
+  # @param [Object] configuration_instance 
+  # 
+  #        Object that instance will be attached to; primarily useful for reference from hooks.
+  #
+  def new_without_internal_array( configuration_instance = nil )
+
+    instance = allocate
+    
+    instance.initialize_without_internal_array( configuration_instance )
+    
+    return instance
+
+  end
+  
   ########
   #  []  #
   ########
@@ -61,7 +82,7 @@ module ::Array::Hooked::ArrayInterface::ClassInstance
             when ::Array::Hooked
               converted_object = attempted_conversion
             when ::Array
-              converted_object = self::WithoutInternalArray.new( @configuration_instance )
+              converted_object = self.new_without_internal_array( @configuration_instance )
               converted_object.internal_array = attempted_conversion
           end
         end

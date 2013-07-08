@@ -8,6 +8,26 @@ require_relative '../../lib/array-hooked.rb'
 
 describe ::Array::Hooked do
   
+  ################################
+  #  new_without_internal_array  #
+  ################################
+
+  it 'can initialize without creating the internal array' do
+    array_without_internal_array = ::Array::Hooked.new_without_internal_array
+    array_without_internal_array.internal_array.should == nil
+  end
+  
+  ##########################################################
+  #  new_without_internal_array( configuration_instance )  #
+  ##########################################################
+  
+  it 'can initialize with a configuration instance without creating the internal array' do
+    configuration_instance = ::Object.new
+    array_without_internal_array = ::Array::Hooked.new_without_internal_array( configuration_instance )
+    array_without_internal_array.internal_array.should == nil
+    array_without_internal_array.configuration_instance.should == configuration_instance
+  end
+  
   #########
   #  new  #
   #########
@@ -76,34 +96,6 @@ describe ::Array::Hooked do
     hooked_array.should == [ :default, :default, :default, :default ]
   end
   
-end
-
-#########################################
-#  Array::Hooked::WithoutInternalArray  #
-#########################################
-
-describe ::Array::Hooked::WithoutInternalArray do
-
-  #########
-  #  new  #
-  #########
-
-  it 'can initialize without creating the internal array' do
-    array_without_internal_array = ::Array::Hooked::WithoutInternalArray.new
-    array_without_internal_array.internal_array.should == nil
-  end
-  
-  ###################################
-  #  new( configuration_instance )  #
-  ###################################
-  
-  it 'can initialize with a configuration instance without creating the internal array' do
-    configuration_instance = ::Object.new
-    array_without_internal_array = ::Array::Hooked::WithoutInternalArray.new( configuration_instance )
-    array_without_internal_array.internal_array.should == nil
-    array_without_internal_array.configuration_instance.should == configuration_instance
-  end
-    
 end
 
 ######################

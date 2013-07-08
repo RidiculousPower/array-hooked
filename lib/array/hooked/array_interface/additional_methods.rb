@@ -58,7 +58,7 @@ module ::Array::Hooked::ArrayInterface::AdditionalMethods
       deleted_objects.unshift( this_deleted_object )
     end while ( this_index -= 1 ) >= 0
 
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = deleted_objects
     
     return new_hooked_array

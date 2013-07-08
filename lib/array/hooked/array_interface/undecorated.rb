@@ -94,7 +94,7 @@ module ::Array::Hooked::ArrayInterface::Undecorated
     length = args[ 1 ]
     
     if length or index.is_a?( ::Range )
-      return_value = self.class::WithoutInternalArray.new( @configuration_instance )
+      return_value = self.class.new_without_internal_array( @configuration_instance )
       return_value.internal_array = @internal_array[ *args ]
     else
       return_value = @internal_array[ index ]

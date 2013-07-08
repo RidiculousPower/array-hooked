@@ -38,7 +38,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def +( other_array )
 
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array + other_array
 
     return new_hooked_array
@@ -55,7 +55,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def -( other_array )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array - other_array
 
     return new_hooked_array
@@ -80,7 +80,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
       when ::String
         @internal_array * integer_or_string
       when ::Integer
-        new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+        new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
         new_hooked_array.internal_array = @internal_array * integer_or_string
         new_hooked_array
     end
@@ -99,7 +99,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     
     other_array = ::Array::Hooked === other_array ? other_array.internal_array : other_array
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array & other_array
     
     return new_hooked_array
@@ -117,7 +117,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
         
     other_array = ::Array::Hooked === other_array ? other_array.internal_array : other_array
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array | other_array
     
     return new_hooked_array
@@ -260,7 +260,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     new_hooked_array = nil
     
     if block_given?
-      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
       new_hooked_array.internal_array = @internal_array.collect( & block )
     end
 
@@ -320,7 +320,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def compact
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.compact
     
     return new_hooked_array
@@ -486,7 +486,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def drop( number )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.drop( number )
   
     return new_hooked_array
@@ -507,7 +507,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     new_hooked_array = nil
     
     if block_given?
-      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
       new_hooked_array.internal_array = @internal_array.drop_while( & block )
     end
     
@@ -687,7 +687,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def flatten( level = 1 )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.flatten( level )
     
     return new_hooked_array
@@ -923,7 +923,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def product( *other_arrays, & block )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     other_arrays.each_with_index do |this_array, this_index|
       other_arrays[ this_index ] = this_array.internal_array if ::Array::Hooked === this_array
     end
@@ -972,7 +972,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     new_hooked_array = nil
     
     if block_given?
-      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
       new_hooked_array.internal_array = @internal_array.reject( & block )
     else
       new_hooked_array = to_enum( __method__ )
@@ -1121,7 +1121,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def reverse
 
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.reverse
 
     return new_hooked_array
@@ -1195,7 +1195,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def rotate( rotate_count = 1 )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.rotate( rotate_count )
     
     return new_hooked_array
@@ -1245,7 +1245,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     new_hooked_array = nil
     
     if block_given?
-      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
       new_hooked_array.internal_array = @internal_array.select( & block )
     end
     
@@ -1299,7 +1299,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def shuffle( random_number_generator = nil )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_internal_array = random_number_generator ? @internal_array.shuffle( random: random_number_generator )
                                                  : @internal_array.shuffle
     new_hooked_array.internal_array = new_internal_array
@@ -1347,7 +1347,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def slice( index_start_or_range, slice_length = nil )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = slice_length ? @internal_array.slice( index_start_or_range, slice_length )
                                                    : @internal_array.slice( index_start_or_range )
     
@@ -1405,7 +1405,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def sort( & block )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.sort( & block )
     
     return new_hooked_array
@@ -1442,7 +1442,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
 
     return to_enum unless block_given?
 
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.sort_by( & block )
     
     return new_hooked_array
@@ -1495,7 +1495,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     new_hooked_array = nil
     
     if block_given?
-      new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+      new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
       new_hooked_array.internal_array = @internal_array.take_while( & block )
     end
     
@@ -1547,7 +1547,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def transpose
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.transpose
     
     return new_hooked_array
@@ -1564,7 +1564,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def uniq( & block )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.uniq( & block )
     
     return new_hooked_array
@@ -1612,7 +1612,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   #
   def values_at( *selectors )
     
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.values_at( *selectors )
     
     return new_hooked_array
@@ -1633,7 +1633,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
   def zip( *other_arrays, & block )
     
     other_arrays.collect! { |this_array| ::Array::Hooked === this_array ? this_array.internal_array : this_array }
-    new_hooked_array = self.class::WithoutInternalArray.new( @configuration_instance )
+    new_hooked_array = self.class.new_without_internal_array( @configuration_instance )
     new_hooked_array.internal_array = @internal_array.zip( *other_arrays )    
     yield if block_given?
     

@@ -10,7 +10,6 @@ require 'forwardable'
   'hooked/array_interface/hooks',
   'hooked/array_interface/undecorated',
   'hooked/array_interface/without_hooks',
-  'hooked/array_interface/without_internal_array',
   'hooked/array_interface/each_range',
   'hooked/array_interface',
   

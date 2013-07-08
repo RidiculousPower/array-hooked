@@ -14,7 +14,6 @@ Gem::Specification.new do |spec|
   spec.homepage                  =  'http://rubygems.org/gems/array-hooked'
 
   spec.add_dependency            'identifies_as'
-  spec.add_dependency            'module-cluster'
 
   spec.date                      = Date.today.to_s
   

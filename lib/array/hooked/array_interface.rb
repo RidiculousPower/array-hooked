@@ -14,41 +14,6 @@ module ::Array::Hooked::ArrayInterface
   include ::Array::Hooked::ArrayInterface::Hooks
   include ::Array::Hooked::ArrayInterface::WithoutHooks
   include ::Array::Hooked::ArrayInterface::EachRange
-  
-  extend ::Module::Cluster
-  hooked_array_cluster = cluster( :hooked_array ).before_include
-
-  ################
-  #  self.class  #
-  ################
-
-  ###
-  # @private
-  #
-  # Enable including class to act like an Array subclass.
-  #
-  hooked_array_cluster.extend( ::Array::Hooked::ArrayInterface::ClassInstance )
-
-  ######################################
-  #  self.class::WithoutInternalArray  #
-  ######################################
-  
-  ###
-  # @private
-  #
-  # Enable including class to automatically create self.class::WithoutInternalArray. 
-  #   This class is used internally so that we can create a new instance to return, 
-  #   and then create its internal Array instance using the internal Array instance's 
-  #   corresponding method.
-  #
-  hooked_array_cluster.cascade_to( :class ) do |hooked_instance|
-    unless hooked_instance.const_defined?( :WithoutInternalArray )
-      hooked_instance_subclass = ::Class.new( hooked_instance ) do
-        include ::Array::Hooked::ArrayInterface::WithoutInternalArray
-      end
-      hooked_instance.const_set( :WithoutInternalArray, hooked_instance_subclass )
-    end
-  end
 
   ################
   #  initialize  #
@@ -69,30 +34,27 @@ module ::Array::Hooked::ArrayInterface
   #
   def initialize( configuration_instance = nil, *array_initialization_args, & block )
     
-    @configuration_instance = configuration_instance
+    initialize_without_internal_array( configuration_instance )
         
-    initialize_internal_array( *array_initialization_args, & block )
+    @internal_array = ::Array.new( *array_initialization_args, & block )
     
   end
 
-  ###############################
-  #  initialize_internal_array  #
-  ###############################
-  
-  ###
-  # @private
-  #
-  # Initialize internal Array instance. 
-  #
-  #   This method is separated out so that the self.class::WithoutInternalArray subclass
-  #   can override it (blanking it out). The result is that internally we can create a
-  #   new instance to return, and then create its internal Array instance using the internal
-  #   Array instance's corresponding method.
-  #
-  def initialize_internal_array( *array_initialization_args, & block )
+  #######################################
+  #  initialize_without_internal_array  #
+  #######################################
 
-    @internal_array = ::Array.new( *array_initialization_args, & block )
-    
+  ###
+  # Initialize with reference to a configuration instance.
+  #
+  # @param [Object] configuration_instance 
+  # 
+  #        Object that instance will be attached to; primarily useful for reference from hooks.
+  #
+  def initialize_without_internal_array( configuration_instance = nil )
+
+    @configuration_instance = configuration_instance
+
   end
 
   ######################
