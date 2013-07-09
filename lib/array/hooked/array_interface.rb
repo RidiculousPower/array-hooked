@@ -15,6 +15,8 @@ module ::Array::Hooked::ArrayInterface
   include ::Array::Hooked::ArrayInterface::WithoutHooks
   include ::Array::Hooked::ArrayInterface::EachRange
 
+  InternalArrayClass = ::Array
+
   ################
   #  initialize  #
   ################
@@ -36,7 +38,7 @@ module ::Array::Hooked::ArrayInterface
     
     initialize_without_internal_array( configuration_instance )
         
-    @internal_array = ::Array.new( *array_initialization_args, & block )
+    @internal_array = self.class::InternalArrayClass.new( *array_initialization_args, & block )
     
   end
 
