@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
   spec.version                   =  '1.2.0'
 
   spec.summary                   =  "Provides ::Array::Hooked."
-  spec.description               =  "A subclass of Array that offers event hooks for pre-insert/pre-set/pre-delete, insert/set/delete. ::HookedArray offers implicit reference to a configuration instance."
+  spec.description               =  "A subclass of Array that offers event hooks for pre-insert/pre-set/pre-delete, insert/set/delete and a reference to a configuration instance that owns the Array instance."
 
   spec.authors                   =  [ 'Asher' ]
   spec.email                     =  'asher@ridiculouspower.com'

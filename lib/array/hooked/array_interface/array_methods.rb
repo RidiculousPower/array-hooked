@@ -184,7 +184,7 @@ module ::Array::Hooked::ArrayInterface::ArrayMethods
     index = args[ 0 ]
     length = nil
 
-    if args.size == 1
+    if args.size == 2
       object = args[ 1 ]
     else
       length = args[ 1 ]
